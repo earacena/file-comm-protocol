@@ -1,11 +1,69 @@
-// name: emanuel aracena beriguete
-// date: february 14, 2020
-// filename: protocol.cpp
-// description: protocol for single client/single server transmission.
+// Name: Emanuel Aracena Beriguete
+// Date: February 14, 2020
+// Filename: Protocol.cpp
+// Description: Protocol for single client/single server transmission.
 
 #include "Protocol.hpp"
 
-Protocol::Protocol(const bool logging) { logging_ = logging; }
+Protocol::Protocol(const bool logging) { 
+  logging_ = logging; 
+
+
+}
+
+
+/////// Handshake helpers
+// SYN
+std::string Protocol::craft_syn_packet() {
+  // syn packet format:
+  // sender session id (2 bytes) : receiver session id (2 bytes) : SYN (1 byte - 00) : Sequence number
+  //   (1 bytes, random number from 0-255)
+  // ex: 2A 45 : D1 43 : 00 : A1
+  // NOTE: initiator decides the receiver session id
+  std::string packet;
+
+  packet.append(session_id_);
+  packet.append(random_hex_string(4));
+  packet.append("00");
+  packet.append(std::atoi);
+}
+
+void Protocol::send_syn_packet(const std::string & packet) {
+
+}
+
+std::string Protocol::receive_syn_packet() {
+
+}
+// SYN-ACK
+std::string Protocol::craft_syn_ack_packet(int sequence_number_x) {
+
+}
+
+void Protocol::send_syn_ack_packet(const std::string & packet) {
+
+}
+
+std::string Protocol::receive_syn_ack_packet() {
+
+}
+// ACK
+std::string Protocol::craft_ack_packet(int sequence_number_y) {
+
+}
+
+void Protocol::send_ack_packet(const std::string & packet) {
+
+}
+
+std::string Protocol::receive_ack_packet() {
+
+}
+////////
+
+
+
+
 
 std::string Protocol::str_to_hex(const std::string & unencoded) {
   static const std::string hex_digits("0123456789ABCDEF");
