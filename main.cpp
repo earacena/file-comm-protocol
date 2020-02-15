@@ -125,7 +125,7 @@ int run_client(const bool logging) {
     std::string filename;
     filename = "./logs/";
     filename.append(std::to_string(static_cast<long int>(time)));
-    filename = filename + "-server.txt";
+    filename = filename + "-client.txt";
     logger.set_filename(filename); 
   }
 
