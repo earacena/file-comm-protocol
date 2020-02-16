@@ -9,14 +9,16 @@
 
 #include <iostream>
 #include <string>
+#include <random>
+#include <iomanip>
+#include <sstream>
 
 #include "Logger.hpp"
 
 class Protocol {
-  Protocol(const bool logging);
-
-  std::string str_to_hex(const std::string & unencoded);
-  std::string hex_to_str(const std::string & encoded);
+public:
+  Protocol(const bool logging, const int mode);
+  ~Protocol();
 
   // Handshake
   // return: 1 if successful, -1 otherwise
@@ -32,10 +34,16 @@ class Protocol {
 
   // Error-checking
 
-private:
+
+  // Logging specific
+  void error(const std::string & error_msg);
+ 
+//private:
+
   // Allow logger to record protocol events
   friend class Logger;
   bool logging_;
+  Logger logger_;
 
   // Used to differentiate multiple servers/clients on one physical computer
   // Not used for identity stage/layer
@@ -48,6 +56,9 @@ private:
   int hex_value(const char hex_digit);
   std::string str_to_hex(const std::string & unencoded);
   std::string hex_to_str(const std::string & encoded);
+  std::string random_hex_str(int length);
+  int random_number(int length);
+  std::string dec_to_hex(int number);
 	/////////
 
 	/////// Handshake helpers
@@ -77,7 +88,6 @@ private:
 	// data[1] - max memory, request: MMEM
 	// ...
 	std::string craft_data_packet(const std::string & request);
-	std::vector<int> data(10);
 };
 
 #endif // PROTOCOL_HPP
