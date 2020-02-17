@@ -22,7 +22,7 @@ public:
 
   // Handshake
   // return: 1 if successful, -1 otherwise
-  int attempt_handshake();
+  int attempt_handshake(const std::string & syn_packet);
 
   // Identify
 	int attempt_identify();
@@ -58,7 +58,8 @@ public:
   std::string hex_to_str(const std::string & encoded);
   std::string random_hex_str(int length);
   int random_number(int length);
-  std::string dec_to_hex(int number);
+  int hex_to_dec(const std::string & encoded);
+  std::string dec_to_hex(int number);  
 	/////////
 
 	/////// Handshake helpers
@@ -67,7 +68,7 @@ public:
   void send_syn_packet(const std::string & packet);
 	std::string receive_syn_packet();
   // SYN-ACK
-  std::string craft_syn_ack_packet(int sequence_number_x);
+  std::string craft_syn_ack_packet(int sequence_number_x, const std::string & syn_packet);
   void send_syn_ack_packet(const std::string & packet);
 	std::string receive_syn_ack_packet();
   // ACK

@@ -11,9 +11,10 @@ Protocol::Protocol(const bool logging, const int mode) {
     std::time_t time = std::time(nullptr);
     std::string filename;
     filename = "./logs/";
-    filename.append(std::to_string(static_cast<long int>(time)));
     // if mode is 1, server otherwise client
-    filename = filename + (mode ? "-server.txt" : "-client.txt");
+    filename = filename + (mode ? "server-" : "client-");
+    filename.append(std::to_string(static_cast<long int>(time)));
+    filename.append(".txt");
     logger_.set_filename(filename);
   }
 }
@@ -21,6 +22,16 @@ Protocol::Protocol(const bool logging, const int mode) {
 Protocol::~Protocol() {
   logger_.save_log();
 }
+
+
+//int Protocol::attempt_handshake(const std::string & syn_packet) {
+//    // SYN packet detected, attempt to perform handshake
+//    // Take sequence number x from syn packet, add 1, add it to new packet,
+//    // generate sequence number y then add it to packet, and send
+//
+//}
+
+
 
 /////// Handshake helpers
 // SYN
@@ -43,11 +54,11 @@ std::string Protocol::craft_syn_packet() {
   sequence_number_ = random_number(4);
   std::string hex_seq_num(dec_to_hex(sequence_number_));
   packet.append(hex_seq_num);
-  logger_.record_event(std::string("Syn packet crafted::") +
+  logger_.record_event(std::string("SYN packet crafted::") +
                        "\n\t\t\t- Raw packet: " + packet +
                        "\n\t\t\t- Session id (Sender): " + session_id_ +
                        "\n\t\t\t- Receiver id: " + receiver_session_id +
-                       "\n\t\t\t- Packet type: (SYN) 00"
+                       "\n\t\t\t- Packet type: (SYN) 00" +
                        "\n\t\t\t- Sequence number (x): " + hex_seq_num);
   return packet; 
 }
@@ -61,9 +72,50 @@ std::string Protocol::receive_syn_packet() {
   return test;
 }
 // SYN-ACK
-std::string Protocol::craft_syn_ack_packet(int sequence_number_x) {
-  std::string test;
-  return test;
+std::string Protocol::craft_syn_ack_packet(int sequence_number_x, const std::string & syn_packet) {
+  // SYN-ACK packet format
+  // sender session id (2 bytes) : receiver session id (2 bytes) : SYN-ACK (1 byte - 01) :
+  //  Sequence number x + 1 : Sequence number y
+  //   (1 bytes, random number from 0-255)
+  // ex: D1 43 : 2A 45 : 01 : A1
+  // NOTE: initiator decides the receiver session id
+
+  // Set session id given by initiator, eventually make Session class handle this
+  std::string packet;
+
+  // Extract given receiver id
+  std::string session_id("");
+  session_id.append(syn_packet.substr(2,2));
+  session_id_ = session_id;
+  packet.append(session_id_);
+
+  // Extract sender id
+  std::string sender_id("");
+  sender_id.append(syn_packet.substr(0,2));
+  packet.append(sender_id);
+
+  // Packet type
+  packet.append("00");
+
+  // Increment sequence number x
+  sequence_number_x += 1;
+  std::string hex_seq_num_x(dec_to_hex(sequence_number_x));
+  packet.append(hex_seq_num_x);
+
+  // Generate sequence number y
+  sequence_number_ = random_number(4);
+  std::string hex_seq_num_y(dec_to_hex(sequence_number_));
+  packet.append(hex_seq_num_y);
+
+
+  logger_.record_event(std::string("SYN-ACK packet crafted::") +
+                       "\n\t\t\t- Raw packet: " + packet +
+                       "\n\t\t\t- Session id (Sender): " + session_id_ +
+                       "\n\t\t\t- Receiver id: " + sender_id +
+                       "\n\t\t\t- Packet type: (SYN-ACK) 01" +
+                       "\n\t\t\t- Sequence number (x+1): " + hex_seq_num_x  +
+                       "\n\t\t\t- Sequence number y: " + hex_seq_num_y);
+  return packet; 
 
 }
 
@@ -170,6 +222,10 @@ int Protocol::hex_value(const char hex_digit) {
 
   // If value not returned then invalid character given
   return -1;
+}
+
+int Protocol::hex_to_dec(const std::string & encoded) {
+  return std::stoi(encoded, nullptr, 16);
 }
 
 std::string Protocol::dec_to_hex(int number) {

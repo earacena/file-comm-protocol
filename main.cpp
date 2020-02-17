@@ -81,10 +81,10 @@ void run_server (const bool logging) {
   }
 
   // read message
-  valread = read(new_socket, buffer, 1024);
-  std::string read_message(buffer);
-  std::cout << "[+] Message received: " << read_message << std::endl;
-
+//  valread = read(new_socket, buffer, 1024);
+//  std::string read_message(buffer);
+//  std::cout << "[+] Message received: " << read_message << std::endl;
+//
   // send message
   std::cout << "[*] Sending message..." << std::endl;
   send(new_socket, hello_message.c_str(), strlen(hello_message.c_str()), 0);
@@ -129,7 +129,24 @@ int run_client(const bool logging) {
     return -1;
   }
 
-  // send message
+  // Receive message
+  valread = read(sock, buffer, 1024);
+  std::string packet(buffer);
+  std::cout << "[+] Packet received: " << packet << std::endl;
+
+  // Check message type
+  std::string packet_type(packet.substr(4,2));
+
+  std::cout << "[+] Packet type: " << packet_type << std::endl;
+  if (packet_type == "00") {
+    // SYN packet, therefore this is the first communication being established
+    // Extract sequence number x
+    std::string seq_num_x_str(packet.substr(6));
+    int seq_num_x = protocol.hex_to_dec(seq_num_x_str);
+    std::string syn_ack_packet = protocol.craft_syn_ack_packet(seq_num_x, packet);
+    send(sock, packet.c_str(), strlen(packet.c_str()), 0);
+  } 
+
   //  std::cout << "[*] Sending hello message..." << std::endl;
   //  send(sock, hello_message.c_str(), strlen(hello_message.c_str()), 0);
   //  
