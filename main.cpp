@@ -28,7 +28,7 @@
 // Client
 #define CLIENT_PORT 4444
 
-void run_server (const bool logging) {
+void run_server (const bool logging, int port) {
   std::cout << "[*] Running server mode..." << std::endl;
   Protocol protocol(logging, 1);
 
@@ -55,7 +55,7 @@ void run_server (const bool logging) {
 
   address.sin_family = AF_INET;
   address.sin_addr.s_addr = INADDR_ANY;
-  address.sin_port = htons(SERVER_PORT);
+  address.sin_port = htons(port);
 
   // Bind socket to port
   if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)  {
@@ -137,7 +137,7 @@ void run_server (const bool logging) {
 
 
 // Client function(s)
-int run_client(const bool logging) {
+int run_client(const bool logging, const std::string & address, int port) {
   std::cout << "[*] Running client mode..." << std::endl;
 
   Protocol protocol(logging, 0);
@@ -155,10 +155,10 @@ int run_client(const bool logging) {
   }
 
   serv_addr.sin_family = AF_INET;
-  serv_addr.sin_port = htons(CLIENT_PORT);
+  serv_addr.sin_port = htons(port);
 
   // Convert IPv4/IPv6 addresses from text to binary form
-  if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+  if (inet_pton(AF_INET, address.c_str(), &serv_addr.sin_addr) <= 0) {
     std::cout << "[-] Error: Invalid address / Address not supported" << std::endl;
     protocol.error("Error - Invalid address / Address not supported");
     return -1;
@@ -182,6 +182,7 @@ int run_client(const bool logging) {
   std::string session_id = packet.substr(2,2);
   std::string recipient_id = packet.substr(0,2);
   int seq_num_y = 0;
+  int result = 0;
   if (packet_type == "00") {
     // SYN packet, therefore this is the first communication being established
     // Extract sequence number x
@@ -189,7 +190,8 @@ int run_client(const bool logging) {
     int seq_num_x = protocol.hex_to_dec(seq_num_x_str);
     std::string syn_ack_packet = protocol.craft_syn_ack_packet(seq_num_x, packet);
     seq_num_y = protocol.hex_to_dec(syn_ack_packet.substr(10, 4));
-    send(sock, syn_ack_packet.c_str(), strlen(syn_ack_packet.c_str()), 0);
+    result = send(sock, syn_ack_packet.c_str(), strlen(syn_ack_packet.c_str()), 0);
+    std::cout << "[+] Sent message [" << result << "]: " << syn_ack_packet << std::endl;
   } 
 
   valread = read(sock, buffer, 1024);
@@ -227,8 +229,11 @@ int run_client(const bool logging) {
 }
 
 void print_help() {
-  std::cout << "Proper usage: ./netnode [MODE] [LOGGING]"  << std::endl;
+  std::cout << "Proper usage: ./netnode [MODE] [ADDRESS] [PORT] [LOGGING]"  << std::endl;
   std::cout << "MODE: \n\tserver\n\tclient"  << std::endl;
+  std::cout << "ADDRESS: \n\tclient - specify address to connect to\n\tserver - localhost" << std::endl;
+  std::cout << "PORT: \n\tserver - specify port to listen";
+  std::cout << "\n\tclient - specify server port to connect to" << std::endl;
   std::cout << "LOGGING: \n\t0 - disables logging";
   std::cout << "\n\t1 - enables logging" << std::endl;
 }
@@ -236,7 +241,7 @@ void print_help() {
 int main(int argc, const char **argv) {
 
   // Check arguments for proper format  
-  if (argc < 3) {
+  if (argc < 5) {
     print_help();
     return 0;
   }
@@ -246,18 +251,20 @@ int main(int argc, const char **argv) {
     return 0;
   }
 
-  if (strcmp(argv[2], "0") != 0 && strcmp(argv[2], "1") != 0) {
+  if (strcmp(argv[4], "0") != 0 && strcmp(argv[4], "1") != 0) {
     print_help();
     return 0;
   }
 
   std::string mode(argv[1]);
-  bool logging = (strcmp(argv[2], "0") == 0 ? false : true);
+  std::string address(argv[2]);
+  int port = std::stoi(argv[3]);
+  bool logging = (strcmp(argv[4], "0") == 0 ? false : true);
   int result = 0;
   if (mode == "server")
-    run_server(logging);
+    run_server(logging, port);
   else
-    result = run_client(logging);
+    result = run_client(logging, address, port);
 
   return result;
 }
