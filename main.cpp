@@ -37,7 +37,6 @@ void run_server (const bool logging) {
   int opt = 1;
   int addrlen = sizeof(address);
   char buffer[1024] = {0};
-  std::string hello_message = protocol.craft_syn_packet();
 
   // Create socket file descriptor
   if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -80,15 +79,58 @@ void run_server (const bool logging) {
     exit(EXIT_FAILURE);
   }
 
-  // read message
+  // Send SYN packet
+  int result = 0;
+  std::string syn_packet = protocol.craft_syn_packet();
+
+  int seq_num = protocol.hex_to_dec(syn_packet.substr(6));
+  std::string session_id = syn_packet.substr(0,2);
+  std::string recipient_id = syn_packet.substr(2,2);
+
+  result = send(new_socket, syn_packet.c_str(), strlen(syn_packet.c_str()), 0);
+  std::cout << "[+] Sent packet [" << result << "]: " << syn_packet << std::endl; 
+
+  result = read(new_socket, buffer, 1024);
+  std::string packet(buffer);
+  std::cout << "[+] Received packet [" << result << "]: " << packet << std::endl;
+
+  std::string packet_type(packet.substr(4,2));
+
+  if (packet_type == "01") {
+    // SYN-ACK received
+    // Check session IDs
+    if (packet.substr(0,2) != recipient_id)
+      // terminate, incorrect recipient_id
+      return;
+
+    if (packet.substr(2,2) != session_id)
+      // terminate, incorrect session_id
+      return;
+    
+    // Check sequence number x increment 
+    if (protocol.hex_to_dec(packet.substr(6,4)) != (seq_num + 1))
+      // terminate, invalid sequence number increment
+      return;
+
+    int seq_num_y = 0;
+    seq_num_y = protocol.hex_to_dec(packet.substr(10,4));
+    std::string ack_packet(protocol.craft_ack_packet(seq_num_y, packet));
+
+    // Send ACK packet
+    result = send(new_socket, ack_packet.c_str(), strlen(ack_packet.c_str()), 0);
+    std::cout << "[+] Sent packet [" << result << "]: " << ack_packet << std::endl;
+    std::cout << "[+] Connection successfully established (handshake complete)" << std::endl;
+  }
+
+// read message
 //  valread = read(new_socket, buffer, 1024);
 //  std::string read_message(buffer);
 //  std::cout << "[+] Message received: " << read_message << std::endl;
 //
-  // send message
-  std::cout << "[*] Sending message..." << std::endl;
-  send(new_socket, hello_message.c_str(), strlen(hello_message.c_str()), 0);
-  std::cout << "[+] Sent message: " << hello_message << std::endl;
+// send message
+//  std::cout << "[*] Sending message..." << std::endl;
+//  send(new_socket, hello_message.c_str(), strlen(hello_message.c_str()), 0);
+//  std::cout << "[+] Sent message: " << hello_message << std::endl;
   
   // terminate
 }
@@ -132,20 +174,46 @@ int run_client(const bool logging) {
   // Receive message
   valread = read(sock, buffer, 1024);
   std::string packet(buffer);
-  std::cout << "[+] Packet received: " << packet << std::endl;
+  std::cout << "[+] Packet received ["  << valread << "]: "<< packet << std::endl;
 
   // Check message type
   std::string packet_type(packet.substr(4,2));
 
-  std::cout << "[+] Packet type: " << packet_type << std::endl;
+  std::string session_id = packet.substr(2,2);
+  std::string recipient_id = packet.substr(0,2);
+  int seq_num_y = 0;
   if (packet_type == "00") {
     // SYN packet, therefore this is the first communication being established
     // Extract sequence number x
     std::string seq_num_x_str(packet.substr(6));
     int seq_num_x = protocol.hex_to_dec(seq_num_x_str);
     std::string syn_ack_packet = protocol.craft_syn_ack_packet(seq_num_x, packet);
-    send(sock, packet.c_str(), strlen(packet.c_str()), 0);
+    seq_num_y = protocol.hex_to_dec(syn_ack_packet.substr(10, 4));
+    send(sock, syn_ack_packet.c_str(), strlen(syn_ack_packet.c_str()), 0);
   } 
+
+  valread = read(sock, buffer, 1024);
+  packet = std::string(buffer); 
+
+  packet_type = packet.substr(4,2);
+  if (packet_type == "02") {
+    // ACK received, check session ids
+
+    if (packet.substr(0,2) != recipient_id)
+      // terminate, incorrect recipient_id
+      return -1;
+
+    if (packet.substr(2,2) != session_id)
+      // terminate, incorrect session_id
+      return -1;
+
+    if (protocol.hex_to_dec(packet.substr(6,4)) != (seq_num_y + 1))
+      // terminate, incorrect increment for sequence number y
+      return -1; 
+  }
+  
+  std::cout << "[+] Connection successfully established (Handshake complete)." << std::endl;
+
 
   //  std::cout << "[*] Sending hello message..." << std::endl;
   //  send(sock, hello_message.c_str(), strlen(hello_message.c_str()), 0);

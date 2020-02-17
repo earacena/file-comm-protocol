@@ -65,16 +65,10 @@ public:
 	/////// Handshake helpers
   // SYN
   std::string craft_syn_packet();
-  void send_syn_packet(const std::string & packet);
-	std::string receive_syn_packet();
   // SYN-ACK
   std::string craft_syn_ack_packet(int sequence_number_x, const std::string & syn_packet);
-  void send_syn_ack_packet(const std::string & packet);
-	std::string receive_syn_ack_packet();
   // ACK
-  std::string craft_ack_packet(int sequence_number_y);
-  void send_ack_packet(const std::string & packet);
-	std::string receive_ack_packet();
+  std::string craft_ack_packet(int sequence_number_y, const std::string & syn_ack_packet);
 	////////
 
 	/////// Identify helpers

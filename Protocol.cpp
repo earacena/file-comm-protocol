@@ -23,16 +23,6 @@ Protocol::~Protocol() {
   logger_.save_log();
 }
 
-
-//int Protocol::attempt_handshake(const std::string & syn_packet) {
-//    // SYN packet detected, attempt to perform handshake
-//    // Take sequence number x from syn packet, add 1, add it to new packet,
-//    // generate sequence number y then add it to packet, and send
-//
-//}
-
-
-
 /////// Handshake helpers
 // SYN
 // @return: string in syn packet format
@@ -40,7 +30,7 @@ std::string Protocol::craft_syn_packet() {
   // syn packet format:
   // sender session id (2 bytes) : receiver session id (2 bytes) : SYN (1 byte - 00) : Sequence number
   //   (1 bytes, random number from 0-255)
-  // ex: 2A 45 : D1 43 : 00 : A1
+  // ex: 2A : D1 : 00 : A1 B1
   // NOTE: initiator decides the receiver session id
   std::string packet;
   
@@ -53,6 +43,9 @@ std::string Protocol::craft_syn_packet() {
   packet.append("00");
   sequence_number_ = random_number(4);
   std::string hex_seq_num(dec_to_hex(sequence_number_));
+  if (hex_seq_num.length() < 4)
+    hex_seq_num = "0" + hex_seq_num;
+
   packet.append(hex_seq_num);
   logger_.record_event(std::string("SYN packet crafted::") +
                        "\n\t\t\t- Raw packet: " + packet +
@@ -63,21 +56,14 @@ std::string Protocol::craft_syn_packet() {
   return packet; 
 }
 
-void Protocol::send_syn_packet(const std::string & packet) {
 
-}
-
-std::string Protocol::receive_syn_packet() {
-  std::string test;
-  return test;
-}
 // SYN-ACK
 std::string Protocol::craft_syn_ack_packet(int sequence_number_x, const std::string & syn_packet) {
   // SYN-ACK packet format
   // sender session id (2 bytes) : receiver session id (2 bytes) : SYN-ACK (1 byte - 01) :
   //  Sequence number x + 1 : Sequence number y
   //   (1 bytes, random number from 0-255)
-  // ex: D1 43 : 2A 45 : 01 : A1
+  // ex: D1 : 2A  : 01 : A1 B2 : FF 00 
   // NOTE: initiator decides the receiver session id
 
   // Set session id given by initiator, eventually make Session class handle this
@@ -95,11 +81,13 @@ std::string Protocol::craft_syn_ack_packet(int sequence_number_x, const std::str
   packet.append(sender_id);
 
   // Packet type
-  packet.append("00");
+  packet.append("01");
 
   // Increment sequence number x
   sequence_number_x += 1;
   std::string hex_seq_num_x(dec_to_hex(sequence_number_x));
+  if (hex_seq_num_x.length() < 4)
+    hex_seq_num_x = "0" + hex_seq_num_x;
   packet.append(hex_seq_num_x);
 
   // Generate sequence number y
@@ -119,31 +107,49 @@ std::string Protocol::craft_syn_ack_packet(int sequence_number_x, const std::str
 
 }
 
-void Protocol::send_syn_ack_packet(const std::string & packet) {
 
-}
-
-std::string Protocol::receive_syn_ack_packet() {
-  std::string test;
-  return test;
-
-}
 // ACK
-std::string Protocol::craft_ack_packet(int sequence_number_y) {
-  std::string test;
-  return test;
+std::string Protocol::craft_ack_packet(int sequence_number_y, const std::string & syn_ack_packet) {
+  // ACK packet format
+  // sender session id (1 bytes) : receiver session id (1 bytes) : ACK (1 byte - 02) :
+  //  Sequence number y+1
+  //   (1 bytes, random number from 0-255)
+  // ex: D1 : 2A : 02 : FF 01
+  // NOTE: initiator decides the receiver session id
+
+  // Set session id given by initiator, eventually make Session class handle this
+  std::string packet;
+
+  // Extract given receiver id
+  std::string sender_id("");
+  sender_id.append(syn_ack_packet.substr(2,2));
+  packet.append(sender_id);
+
+  // Extract receiver id
+  std::string receiver_id("");
+  receiver_id.append(syn_ack_packet.substr(0,2));
+  packet.append(receiver_id);
+
+  // Packet type
+  packet.append("02");
+
+  // Generate sequence number y
+  std::string hex_seq_num_y(dec_to_hex(sequence_number_y + 1));
+  if (hex_seq_num_y.length() < 4)
+    hex_seq_num_y = "0" + hex_seq_num_y;
+  packet.append(hex_seq_num_y);
+
+
+  logger_.record_event(std::string("ACK packet crafted::") +
+                       "\n\t\t\t- Raw packet: " + packet +
+                       "\n\t\t\t- Session id (Sender): " + sender_id +
+                       "\n\t\t\t- Receiver id: " + receiver_id +
+                       "\n\t\t\t- Packet type: (ACK) 02" +
+                       "\n\t\t\t- Sequence number y: " + hex_seq_num_y);
+  return packet; 
 
 }
 
-void Protocol::send_ack_packet(const std::string & packet) {
-
-}
-
-std::string Protocol::receive_ack_packet() {
-  std::string test;
-  return test;
-
-}
 ////////
 
 
