@@ -99,18 +99,28 @@ void run_server (const bool logging, int port) {
   if (packet_type == "01") {
     // SYN-ACK received
     // Check session IDs
-    if (packet.substr(0,2) != recipient_id)
+    if (packet.substr(0,2) != recipient_id) {
       // terminate, incorrect recipient_id
+      protocol.error("Connection terminated - Incorrect recipient id, expected: " + recipient_id +
+                     " received: " + packet.substr(0,2));
       return;
+    }
 
-    if (packet.substr(2,2) != session_id)
+    if (packet.substr(2,2) != session_id) {
       // terminate, incorrect session_id
+      protocol.error("Connection terminated - Incorrect session id, expected: " + session_id +
+                     " received: " + packet.substr(2,2));
       return;
-    
+    }
+
     // Check sequence number x increment 
-    if (protocol.hex_to_dec(packet.substr(6,4)) != (seq_num + 1))
+    if (protocol.hex_to_dec(packet.substr(6,4)) != (seq_num + 1)) {
       // terminate, invalid sequence number increment
+      protocol.error("Connection terminated - Incorrect sequence number increment, expected: " + 
+                      std::to_string(seq_num+1) + " received: " +
+                      std::to_string(protocol.hex_to_dec(packet.substr(6,4))));
       return;
+    }
 
     int seq_num_y = 0;
     seq_num_y = protocol.hex_to_dec(packet.substr(10,4));
@@ -119,7 +129,7 @@ void run_server (const bool logging, int port) {
     // Send ACK packet
     result = send(new_socket, ack_packet.c_str(), strlen(ack_packet.c_str()), 0);
     std::cout << "[+] Sent packet [" << result << "]: " << ack_packet << std::endl;
-    std::cout << "[+] Connection successfully established (handshake complete)" << std::endl;
+    std::cout << "[+] Connection successfully established (Handshake complete)." << std::endl;
   }
 
 // read message
@@ -201,20 +211,31 @@ int run_client(const bool logging, const std::string & address, int port) {
   if (packet_type == "02") {
     // ACK received, check session ids
 
-    if (packet.substr(0,2) != recipient_id)
+    if (packet.substr(0,2) != recipient_id) {
       // terminate, incorrect recipient_id
+      protocol.error("Connection terminated - Incorrect recipient id, expected: " + recipient_id +
+                     " received: " + packet.substr(0,2));
       return -1;
+    }
 
-    if (packet.substr(2,2) != session_id)
+    if (packet.substr(2,2) != session_id) {
+      protocol.error("Connection terminated - Incorrect session id, expected: " + session_id +
+                     " received: " + packet.substr(2,2));
       // terminate, incorrect session_id
       return -1;
+    }
 
-    if (protocol.hex_to_dec(packet.substr(6,4)) != (seq_num_y + 1))
+    if (protocol.hex_to_dec(packet.substr(6,4)) != (seq_num_y + 1)) {
       // terminate, incorrect increment for sequence number y
+      protocol.error("Connection terminated - Incorrect sequence number increment, expected: " + 
+                      std::to_string(seq_num_y+1) + " received: " +
+                      std::to_string(protocol.hex_to_dec(packet.substr(6,4))));
       return -1; 
+    }
+    
+    std::cout << "[+] Connection successfully established (Handshake complete)." << std::endl;
   }
   
-  std::cout << "[+] Connection successfully established (Handshake complete)." << std::endl;
 
 
   //  std::cout << "[*] Sending hello message..." << std::endl;
