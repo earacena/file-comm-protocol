@@ -17,6 +17,7 @@
 
 class Protocol {
 public:
+  Protocol();
   Protocol(const bool logging, const int mode);
   ~Protocol();
 

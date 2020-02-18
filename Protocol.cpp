@@ -5,6 +5,8 @@
 
 #include "Protocol.hpp"
 
+Protocol::Protocol() { }
+
 Protocol::Protocol(const bool logging, const int mode) { 
   logging_ = logging;
   if (logging_) {
