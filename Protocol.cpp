@@ -37,8 +37,8 @@ std::string Protocol::craft_syn_packet() {
   std::string packet;
   
   // Since this is the first communication, create session ids
-  session_id_ = random_hex_str(4);
-  std::string receiver_session_id(random_hex_str(4));
+  session_id_ = random_hex_str(2);
+  std::string receiver_session_id(random_hex_str(2));
 
   packet.append(session_id_);
   packet.append(receiver_session_id);
@@ -95,6 +95,8 @@ std::string Protocol::craft_syn_ack_packet(int sequence_number_x, const std::str
   // Generate sequence number y
   sequence_number_ = random_number(4);
   std::string hex_seq_num_y(dec_to_hex(sequence_number_));
+  if (hex_seq_num_y.length() < 4)
+    hex_seq_num_y = "0" + hex_seq_num_y;
   packet.append(hex_seq_num_y);
 
 
@@ -204,10 +206,11 @@ std::string Protocol::random_hex_str(int length) {
   std::uniform_int_distribution<> dist(0, 15);
   
   int rand_val = 0;
-  for (int i = 0; i < length; ++i)
-    rand_val = static_cast<int>(dist(mt));
-    result.append(std::to_string(hex_digits.at(rand_val)));
-
+  for (int i = 0; i < length; ++i) {
+    rand_val = dist(mt);
+    result.append(hex_digits.substr(rand_val,1));
+    std::cout << "rand_val: " << rand_val << " result: " << result << std::endl;
+  }
   return result;
 }
 
