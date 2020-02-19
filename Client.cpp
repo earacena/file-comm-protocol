@@ -71,22 +71,25 @@ int Client::connect_to_server(const std::string & address, int port) {
     std::string seq_num_x_str(packet.data);
     int seq_num_x = protocol_.hex_to_dec(seq_num_x_str);
     Packet syn_ack_packet = protocol_.craft_syn_ack_packet(seq_num_x, packet);
+    seq_num_y = protocol_.hex_to_dec(syn_ack_packet.data.substr(4,4));
     std::string raw_syn_ack_packet = syn_ack_packet.encode();
     result = send(sock, raw_syn_ack_packet.c_str(), strlen(raw_syn_ack_packet.c_str()), 0);
-    std::cout << "[+] Sent message [" << result << "]: " << raw_syn_ack_packet << std::endl;
+    std::cout << "[+] Sent packet [" << result << "]: " << raw_syn_ack_packet << std::endl;
   } 
 
   // Wait for ACK
   valread = read(sock, buffer, 1024);
-  raw_packet = std::string(buffer); 
+  std::string raw_response_packet = std::string(buffer); 
+  std::cout << "[+] Packet received [" << valread << "]: " << raw_response_packet << std::endl;
 
   Packet response;
-  response.parse(raw_packet);
+  response.parse(raw_response_packet);
 
   if (response.type == "02") {
     // ACK received, check session ids
 
     if (packet.receiver_id != response.receiver_id) {
+      std::cout << "1" << std::endl;
       // terminate, incorrect recipient_id
       protocol_.error("Connection terminated - Incorrect receiver id, expected: " + 
                      packet.receiver_id + " received: " + response.receiver_id);
@@ -94,13 +97,15 @@ int Client::connect_to_server(const std::string & address, int port) {
     }
 
     if (packet.sender_id != response.sender_id) {
+      std::cout << "2" << std::endl;
       protocol_.error("Connection terminated - Incorrect sender id, expected: " + 
                      packet.sender_id + " received: " + response.sender_id);
       // terminate, incorrect session_id
       return -1;
     }
 
-    if (protocol_.hex_to_dec(packet.data) != (protocol_.hex_to_dec(response.data.substr(0,4)) + 1)) {
+    if ((seq_num_y+1) != (protocol_.hex_to_dec(response.data.substr(0,4)))) {
+      std::cout << "3: "<< seq_num_y << " " << response.data.substr(0,4) << std::endl;
       // terminate, incorrect increment for sequence number y
       protocol_.error(std::string("Connection terminated ") + 
                      "- Incorrect sequence number increment, expected: " + 

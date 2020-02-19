@@ -76,5 +76,8 @@ int main(int argc, const char **argv) {
   else
     result = run_client(logging, address, port);
 
+  if (result < 0)
+    std::cout << "[-] Exited with result: " << result << std::endl;
+
   return result;
 }
