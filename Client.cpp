@@ -56,55 +56,56 @@ int Client::connect_to_server(const std::string & address, int port) {
 
   // Receive message
   valread = read(sock, buffer, 1024);
-  std::string packet(buffer);
-  std::cout << "[+] Packet received ["  << valread << "]: "<< packet << std::endl;
+  std::string raw_packet(buffer);
+  std::cout << "[+] Packet received ["  << valread << "]: "<< raw_packet << std::endl;
 
   // Check message type
-  std::string packet_type(packet.substr(4,2));
-  std::string session_id = packet.substr(2,2);
-  std::string recipient_id = packet.substr(0,2);
+  Packet packet;
+  packet.parse(raw_packet);
 
   int seq_num_y = 0;
   int result = 0;
-  if (packet_type == "00") {
+  if (packet.type == "00") {
     // SYN packet, therefore this is the first communication being established
     // Extract sequence number x
-    std::string seq_num_x_str(packet.substr(6));
+    std::string seq_num_x_str(packet.data);
     int seq_num_x = protocol_.hex_to_dec(seq_num_x_str);
-    std::string syn_ack_packet = protocol_.craft_syn_ack_packet(seq_num_x, packet);
-    seq_num_y = protocol_.hex_to_dec(syn_ack_packet.substr(10, 4));
-    result = send(sock, syn_ack_packet.c_str(), strlen(syn_ack_packet.c_str()), 0);
-    std::cout << "[+] Sent message [" << result << "]: " << syn_ack_packet << std::endl;
+    Packet syn_ack_packet = protocol_.craft_syn_ack_packet(seq_num_x, packet);
+    std::string raw_syn_ack_packet = syn_ack_packet.encode();
+    result = send(sock, raw_syn_ack_packet.c_str(), strlen(raw_syn_ack_packet.c_str()), 0);
+    std::cout << "[+] Sent message [" << result << "]: " << raw_syn_ack_packet << std::endl;
   } 
 
   // Wait for ACK
   valread = read(sock, buffer, 1024);
-  packet = std::string(buffer); 
+  raw_packet = std::string(buffer); 
 
-  packet_type = packet.substr(4,2);
-  if (packet_type == "02") {
+  Packet response;
+  response.parse(raw_packet);
+
+  if (response.type == "02") {
     // ACK received, check session ids
 
-    if (packet.substr(0,2) != recipient_id) {
+    if (packet.receiver_id != response.receiver_id) {
       // terminate, incorrect recipient_id
-      protocol_.error("Connection terminated - Incorrect recipient id, expected: " + 
-                     recipient_id + " received: " + packet.substr(0,2));
+      protocol_.error("Connection terminated - Incorrect receiver id, expected: " + 
+                     packet.receiver_id + " received: " + response.receiver_id);
       return -1;
     }
 
-    if (packet.substr(2,2) != session_id) {
-      protocol_.error("Connection terminated - Incorrect session id, expected: " + 
-                     session_id + " received: " + packet.substr(2,2));
+    if (packet.sender_id != response.sender_id) {
+      protocol_.error("Connection terminated - Incorrect sender id, expected: " + 
+                     packet.sender_id + " received: " + response.sender_id);
       // terminate, incorrect session_id
       return -1;
     }
 
-    if (protocol_.hex_to_dec(packet.substr(6,4)) != (seq_num_y + 1)) {
+    if (protocol_.hex_to_dec(packet.data) != (protocol_.hex_to_dec(response.data.substr(0,4)) + 1)) {
       // terminate, incorrect increment for sequence number y
       protocol_.error(std::string("Connection terminated ") + 
                      "- Incorrect sequence number increment, expected: " + 
-                      std::to_string(seq_num_y+1) + " received: " +
-                      std::to_string(protocol_.hex_to_dec(packet.substr(6,4))));
+                      std::to_string(protocol_.hex_to_dec(packet.data) + 1) + " received: " +
+                      std::to_string(protocol_.hex_to_dec(response.data.substr(0,4))));
       return -1; 
     }
     

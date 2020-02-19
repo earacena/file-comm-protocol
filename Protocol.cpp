@@ -22,98 +22,118 @@ Protocol::Protocol(const bool logging, const int mode) {
 }
 
 Protocol::~Protocol() {
-  logger_.save_log();
+  if (logging_)
+    logger_.save_log();
 }
 
 /////// Handshake helpers
 // SYN
 // @return: string in syn packet format
-std::string Protocol::craft_syn_packet() {
+Packet Protocol::craft_syn_packet() {
   // syn packet format:
   // sender session id (2 bytes) : receiver session id (2 bytes) : SYN (1 byte - 00) : Sequence number
   //   (1 bytes, random number from 0-255)
   // ex: 2A : D1 : 00 : A1 B1
   // NOTE: initiator decides the receiver session id
-  std::string packet;
+  Packet syn_packet;
   
   // Since this is the first communication, create session ids
   session_id_ = random_hex_str(2);
-  std::string receiver_session_id(random_hex_str(2));
+  syn_packet.sender_id = session_id_;
 
-  packet.append(session_id_);
-  packet.append(receiver_session_id);
-  packet.append("00");
+  std::string receiver_session_id(random_hex_str(2));
+  syn_packet.receiver_id = receiver_session_id;
+  syn_packet.type = "00";
+
   sequence_number_ = random_number(4);
   std::string hex_seq_num(dec_to_hex(sequence_number_));
   if (hex_seq_num.length() < 4)
     hex_seq_num = "0" + hex_seq_num;
 
-  packet.append(hex_seq_num);
-  logger_.record_event(std::string("SYN packet crafted::") +
-                       "\n\t\t\t- Raw packet: " + packet +
-                       "\n\t\t\t- Session id (Sender): " + session_id_ +
-                       "\n\t\t\t- Receiver id: " + receiver_session_id +
-                       "\n\t\t\t- Packet type: (SYN) 00" +
-                       "\n\t\t\t- Sequence number (x): " + hex_seq_num);
-  return packet; 
+  syn_packet.data = hex_seq_num;
+  syn_packet.start_by = 26;
+  syn_packet.end_by = syn_packet.start_by + syn_packet.data.length();
+  syn_packet.packet_size = 26 + syn_packet.data.length();
+  syn_packet.packet_num = 1;
+  syn_packet.total_packets = 1;
+  syn_packet.checksum = syn_packet.compute_checksum();
+
+  logger_.record_event(std::string("\nSYN packet crafted::") +
+                       "\n\t- Raw packet:\t\t" + syn_packet.encode() +
+                       "\n\t- Packet size:\t\t" + dec_to_hex(syn_packet.packet_size) +
+                       "\n\t- Start-by:\t\t" + dec_to_hex(syn_packet.start_by) +
+                       "\n\t- End-by:\t\t" + dec_to_hex(syn_packet.end_by) +
+                       "\n\t- Packet # (out of n):\t\t" + dec_to_hex(syn_packet.packet_num) +
+                       "\n\t- Total packets (n):\t\t" + dec_to_hex(syn_packet.total_packets) +
+                       "\n\t- Session id (Sender):\t\t" + syn_packet.sender_id +
+                       "\n\t- Receiver id:\t\t" + syn_packet.receiver_id +
+                       "\n\t- Packet type:\t\t" + syn_packet.type +
+                       "\n\t- Checksum:\t\t" + syn_packet.checksum +
+                       "\n\t- Data:" +
+                       "\n\t-  Sequence number (x):\t" + syn_packet.data);
+  return syn_packet; 
 }
 
 
 // SYN-ACK
-std::string Protocol::craft_syn_ack_packet(int sequence_number_x, const std::string & syn_packet) {
+Packet Protocol::craft_syn_ack_packet(int sequence_number_x, const Packet & syn_packet) {
   // SYN-ACK packet format
-  // sender session id (2 bytes) : receiver session id (2 bytes) : SYN-ACK (1 byte - 01) :
-  //  Sequence number x + 1 : Sequence number y
-  //   (1 bytes, random number from 0-255)
-  // ex: D1 : 2A  : 01 : A1 B2 : FF 00 
   // NOTE: initiator decides the receiver session id
 
   // Set session id given by initiator, eventually make Session class handle this
-  std::string packet;
+  Packet syn_ack_packet;
 
-  // Extract given receiver id
-  std::string session_id("");
-  session_id.append(syn_packet.substr(2,2));
-  session_id_ = session_id;
-  packet.append(session_id_);
+  // Extract given ids
+  session_id_ = syn_packet.receiver_id;
+  syn_ack_packet.sender_id = syn_packet.receiver_id;
+  syn_ack_packet.receiver_id = syn_packet.sender_id;
 
-  // Extract sender id
-  std::string sender_id("");
-  sender_id.append(syn_packet.substr(0,2));
-  packet.append(sender_id);
 
   // Packet type
-  packet.append("01");
+  syn_ack_packet.type = "01";
 
   // Increment sequence number x
   sequence_number_x += 1;
   std::string hex_seq_num_x(dec_to_hex(sequence_number_x));
   if (hex_seq_num_x.length() < 4)
     hex_seq_num_x = "0" + hex_seq_num_x;
-  packet.append(hex_seq_num_x);
+  syn_ack_packet.data.append(hex_seq_num_x);
 
   // Generate sequence number y
   sequence_number_ = random_number(4);
   std::string hex_seq_num_y(dec_to_hex(sequence_number_));
   if (hex_seq_num_y.length() < 4)
     hex_seq_num_y = "0" + hex_seq_num_y;
-  packet.append(hex_seq_num_y);
+  syn_ack_packet.data.append(hex_seq_num_y);
 
+  syn_ack_packet.packet_size = 26 + syn_ack_packet.data.length();
+  syn_ack_packet.start_by = 26;
+  syn_ack_packet.end_by = syn_ack_packet.data.length() + syn_ack_packet.start_by;
+  syn_ack_packet.packet_num = 1;
+  syn_ack_packet.total_packets = 1;
+  syn_ack_packet.checksum = syn_ack_packet.compute_checksum();
 
-  logger_.record_event(std::string("SYN-ACK packet crafted::") +
-                       "\n\t\t\t- Raw packet: " + packet +
-                       "\n\t\t\t- Session id (Sender): " + session_id_ +
-                       "\n\t\t\t- Receiver id: " + sender_id +
-                       "\n\t\t\t- Packet type: (SYN-ACK) 01" +
-                       "\n\t\t\t- Sequence number (x+1): " + hex_seq_num_x  +
-                       "\n\t\t\t- Sequence number y: " + hex_seq_num_y);
-  return packet; 
+  logger_.record_event(std::string("\nSYN-ACK packet crafted::") +
+                       "\n\t- Raw packet:\t\t" + syn_ack_packet.encode() +
+                       "\n\t- Packet size:\t\t" + dec_to_hex(syn_ack_packet.packet_size) +
+                       "\n\t- Start-by:\t\t" + dec_to_hex(syn_ack_packet.start_by) +
+                       "\n\t- End-by:\t\t" + dec_to_hex(syn_ack_packet.end_by) +
+                       "\n\t- Packet # (out of n):\t\t" + dec_to_hex(syn_ack_packet.packet_num) +
+                       "\n\t- Total packets (n):\t\t" + dec_to_hex(syn_ack_packet.total_packets) +
+                       "\n\t- Session id (Sender):\t\t" + syn_ack_packet.sender_id +
+                       "\n\t- Receiver id:\t\t" + syn_ack_packet.receiver_id +
+                       "\n\t- Packet type:\t\t" + syn_ack_packet.type +
+                       "\n\t- Checksum:\t\t" + syn_ack_packet.checksum +
+                       "\n\t- Data:" +
+                       "\n\t-  Sequence number (x+1):\t" + syn_ack_packet.data.substr(0,4) +
+                       "\n\t-  Sequence number (y):\t" + syn_ack_packet.data.substr(4));
+
+  return syn_ack_packet; 
 
 }
 
-
 // ACK
-std::string Protocol::craft_ack_packet(int sequence_number_y, const std::string & syn_ack_packet) {
+Packet Protocol::craft_ack_packet(int sequence_number_y, const Packet & syn_ack_packet) {
   // ACK packet format
   // sender session id (1 bytes) : receiver session id (1 bytes) : ACK (1 byte - 02) :
   //  Sequence number y+1
@@ -122,41 +142,46 @@ std::string Protocol::craft_ack_packet(int sequence_number_y, const std::string 
   // NOTE: initiator decides the receiver session id
 
   // Set session id given by initiator, eventually make Session class handle this
-  std::string packet;
+  Packet ack_packet;
 
-  // Extract given receiver id
-  std::string sender_id("");
-  sender_id.append(syn_ack_packet.substr(2,2));
-  packet.append(sender_id);
-
-  // Extract receiver id
-  std::string receiver_id("");
-  receiver_id.append(syn_ack_packet.substr(0,2));
-  packet.append(receiver_id);
+  // Extract given ids
+  ack_packet.sender_id = syn_ack_packet.receiver_id;
+  ack_packet.receiver_id = syn_ack_packet.sender_id;
 
   // Packet type
-  packet.append("02");
+  ack_packet.type = "02";
 
   // Generate sequence number y
   std::string hex_seq_num_y(dec_to_hex(sequence_number_y + 1));
   if (hex_seq_num_y.length() < 4)
     hex_seq_num_y = "0" + hex_seq_num_y;
-  packet.append(hex_seq_num_y);
+  ack_packet.data.append(hex_seq_num_y);
 
+  ack_packet.packet_size = 26 + ack_packet.data.length();
+  ack_packet.start_by = 26;
+  ack_packet.end_by = ack_packet.start_by + ack_packet.data.length();
+  ack_packet.packet_num = 1;
+  ack_packet.total_packets = 1;
+  ack_packet.checksum = ack_packet.compute_checksum();
 
-  logger_.record_event(std::string("ACK packet crafted::") +
-                       "\n\t\t\t- Raw packet: " + packet +
-                       "\n\t\t\t- Session id (Sender): " + sender_id +
-                       "\n\t\t\t- Receiver id: " + receiver_id +
-                       "\n\t\t\t- Packet type: (ACK) 02" +
-                       "\n\t\t\t- Sequence number y: " + hex_seq_num_y);
-  return packet; 
+  logger_.record_event(std::string("\nACK packet crafted::") +
+                       "\n\t- Raw packet:\t\t" + ack_packet.encode() +
+                       "\n\t- Packet size:\t\t" + dec_to_hex(ack_packet.packet_size) +
+                       "\n\t- Start-by:\t\t" + dec_to_hex(ack_packet.start_by) +
+                       "\n\t- End-by:\t\t" + dec_to_hex(ack_packet.end_by) +
+                       "\n\t- Packet # (out of n):\t\t" + dec_to_hex(ack_packet.packet_num) +
+                       "\n\t- Total packets (n):\t\t" + dec_to_hex(ack_packet.total_packets) +
+                       "\n\t- Session id (Sender):\t\t" + ack_packet.sender_id +
+                       "\n\t- Receiver id:\t\t" + ack_packet.receiver_id +
+                       "\n\t- Packet type:\t\t" + ack_packet.type +
+                       "\n\t- Checksum:\t\t" + ack_packet.checksum +
+                       "\n\t- Data:" +
+                       "\n\t-  Sequence number (y+1):\t" + ack_packet.data);
+
+  return ack_packet; 
 
 }
-
 ////////
-
-
 
 
 ////// Hex conversion helpers ///////
@@ -209,7 +234,6 @@ std::string Protocol::random_hex_str(int length) {
   for (int i = 0; i < length; ++i) {
     rand_val = dist(mt);
     result.append(hex_digits.substr(rand_val,1));
-    std::cout << "rand_val: " << rand_val << " result: " << result << std::endl;
   }
   return result;
 }

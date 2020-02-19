@@ -13,28 +13,16 @@
 #include <iomanip>
 #include <sstream>
 
+#include "Packet.hpp"
 #include "Logger.hpp"
+
+class Packet;
 
 class Protocol {
 public:
   Protocol();
   Protocol(const bool logging, const int mode);
   ~Protocol();
-
-  // Handshake
-  // return: 1 if successful, -1 otherwise
-  int attempt_handshake(const std::string & syn_packet);
-
-  // Identify
-	int attempt_identify();
-
-  // Pre-transmission
-	int attempt_pre_transmit();
-
-  // Transmission
-
-  // Error-checking
-
 
   // Logging specific
   void error(const std::string & error_msg);
@@ -65,11 +53,11 @@ public:
 
 	/////// Handshake helpers
   // SYN
-  std::string craft_syn_packet();
+  Packet craft_syn_packet();
   // SYN-ACK
-  std::string craft_syn_ack_packet(int sequence_number_x, const std::string & syn_packet);
+  Packet craft_syn_ack_packet(int sequence_number_x, const Packet & syn_packet);
   // ACK
-  std::string craft_ack_packet(int sequence_number_y, const std::string & syn_ack_packet);
+  Packet craft_ack_packet(int sequence_number_y, const Packet & syn_ack_packet);
 	////////
 
 	/////// Identify helpers

@@ -1,4 +1,4 @@
-OBJS = main.cpp Protocol.cpp Server.cpp Client.cpp Logger.cpp
+OBJS = main.cpp Packet.cpp Protocol.cpp Server.cpp Client.cpp Logger.cpp
 FLAGS = -g -Wall -pedantic
 EXEC = netnode
 #LIBS = 
