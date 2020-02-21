@@ -5,7 +5,9 @@
 
 #include "Protocol.hpp"
 
-Protocol::Protocol() { }
+Protocol::Protocol() {
+  logging_ = false;
+}
 
 Protocol::Protocol(const bool logging, const int mode) { 
   logging_ = logging;
@@ -63,14 +65,14 @@ Packet Protocol::craft_syn_packet() {
                        "\n\t- Packet size:\t\t" + dec_to_hex(syn_packet.packet_size) +
                        "\n\t- Start-by:\t\t" + dec_to_hex(syn_packet.start_by) +
                        "\n\t- End-by:\t\t" + dec_to_hex(syn_packet.end_by) +
-                       "\n\t- Packet # (out of n):\t\t" + dec_to_hex(syn_packet.packet_num) +
-                       "\n\t- Total packets (n):\t\t" + dec_to_hex(syn_packet.total_packets) +
-                       "\n\t- Session id (Sender):\t\t" + syn_packet.sender_id +
+                       "\n\t- Packet # (out of n):\t" + dec_to_hex(syn_packet.packet_num) +
+                       "\n\t- Total packets (n):\t" + dec_to_hex(syn_packet.total_packets) +
+                       "\n\t- Session id (Sender):\t" + syn_packet.sender_id +
                        "\n\t- Receiver id:\t\t" + syn_packet.receiver_id +
                        "\n\t- Packet type:\t\t" + syn_packet.type +
                        "\n\t- Checksum:\t\t" + syn_packet.checksum +
                        "\n\t- Data:" +
-                       "\n\t-  Sequence number (x):\t" + syn_packet.data);
+                       "\n\t... Seq. num. (x):\t" + syn_packet.data);
   return syn_packet; 
 }
 
@@ -118,15 +120,15 @@ Packet Protocol::craft_syn_ack_packet(int sequence_number_x, const Packet & syn_
                        "\n\t- Packet size:\t\t" + dec_to_hex(syn_ack_packet.packet_size) +
                        "\n\t- Start-by:\t\t" + dec_to_hex(syn_ack_packet.start_by) +
                        "\n\t- End-by:\t\t" + dec_to_hex(syn_ack_packet.end_by) +
-                       "\n\t- Packet # (out of n):\t\t" + dec_to_hex(syn_ack_packet.packet_num) +
-                       "\n\t- Total packets (n):\t\t" + dec_to_hex(syn_ack_packet.total_packets) +
-                       "\n\t- Session id (Sender):\t\t" + syn_ack_packet.sender_id +
+                       "\n\t- Packet # (out of n):\t" + dec_to_hex(syn_ack_packet.packet_num) +
+                       "\n\t- Total packets (n):\t" + dec_to_hex(syn_ack_packet.total_packets) +
+                       "\n\t- Session id (Sender):\t" + syn_ack_packet.sender_id +
                        "\n\t- Receiver id:\t\t" + syn_ack_packet.receiver_id +
                        "\n\t- Packet type:\t\t" + syn_ack_packet.type +
                        "\n\t- Checksum:\t\t" + syn_ack_packet.checksum +
                        "\n\t- Data:" +
-                       "\n\t-  Sequence number (x+1):\t" + syn_ack_packet.data.substr(0,4) +
-                       "\n\t-  Sequence number (y):\t" + syn_ack_packet.data.substr(4));
+                       "\n\t... Seq. num. (x+1):\t" + syn_ack_packet.data.substr(0,4) +
+                       "\n\t... Seq. num. (y):\t" + syn_ack_packet.data.substr(4));
 
   return syn_ack_packet; 
 
@@ -169,14 +171,14 @@ Packet Protocol::craft_ack_packet(int sequence_number_y, const Packet & syn_ack_
                        "\n\t- Packet size:\t\t" + dec_to_hex(ack_packet.packet_size) +
                        "\n\t- Start-by:\t\t" + dec_to_hex(ack_packet.start_by) +
                        "\n\t- End-by:\t\t" + dec_to_hex(ack_packet.end_by) +
-                       "\n\t- Packet # (out of n):\t\t" + dec_to_hex(ack_packet.packet_num) +
-                       "\n\t- Total packets (n):\t\t" + dec_to_hex(ack_packet.total_packets) +
-                       "\n\t- Session id (Sender):\t\t" + ack_packet.sender_id +
+                       "\n\t- Packet # (out of n):\t" + dec_to_hex(ack_packet.packet_num) +
+                       "\n\t- Total packets (n):\t" + dec_to_hex(ack_packet.total_packets) +
+                       "\n\t- Session id (Sender):\t" + ack_packet.sender_id +
                        "\n\t- Receiver id:\t\t" + ack_packet.receiver_id +
                        "\n\t- Packet type:\t\t" + ack_packet.type +
                        "\n\t- Checksum:\t\t" + ack_packet.checksum +
                        "\n\t- Data:" +
-                       "\n\t-  Sequence number (y+1):\t" + ack_packet.data);
+                       "\n\t... Seq. num. (y+1):\t" + ack_packet.data);
 
   return ack_packet; 
 

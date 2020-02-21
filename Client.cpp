@@ -8,14 +8,14 @@
 Client::Client() { 
   std::cout << "[+] Client instance created." << std::endl;
   logging_ = false;
-  Protocol protocol(logging_, 1);
+  Protocol protocol(logging_, 0);
   protocol_ = protocol;
 }
 
 Client::Client(bool logging) { 
   logging_ = logging; 
   std::cout << "[+] Client instance created." << std::endl;
-  Protocol protocol(logging_, 1);
+  Protocol protocol(logging_, 0);
   protocol_ = protocol;
 }
 

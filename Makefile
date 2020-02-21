@@ -6,3 +6,6 @@ EXEC = netnode
 
 all:
 	g++ $(OBJS) -o $(EXEC) $(FLAGS) 
+
+clear:
+	rm logs/*
