@@ -28,7 +28,45 @@ Protocol::~Protocol() {
     logger_.save_log();
 }
 
+
 /////// Handshake helpers
+
+// Min. buffer request (FF)
+Packet Protocol::craft_min_buffer_request_packet() {
+  Packet min_buf_packet;
+
+  min_buf_packet.packet_size = 26;
+  min_buf_packet.start_by = 26;
+  min_buf_packet.end_by = 26;
+  min_buf_packet.packet_num = 1;
+  min_buf_packet.total_packets = 1;
+  min_buf_packet.sender_id = "00";
+  min_buf_packet.receiver_id = "00";
+  min_buf_packet.type = "FF";
+  min_buf_packet.checksum = mini_buf_packet.compute_checksum();
+  min_buf_packet.data = "";
+
+  return min_buf_packet;
+}
+
+Packet Protocol::craft_min_buffer_response_packet(const int min_buffer_size) {
+  Packet min_buf_packet;
+
+  min_buf_packet_resp.packet_size = 26;
+  min_buf_packet_resp.start_by = 26;
+  min_buf_packet_resp.packet_num = 1;
+  min_buf_packet_resp.total_packets = 1;
+  min_buf_packet_resp.sender_id = "00";
+  min_buf_packet_resp.receiver_id = "00";
+  min_buf_packet_resp.type = "FE";
+  min_buf_packet_resp.checksum = mini_buf_packet.compute_checksum();
+  min_buf_packet_resp.data = dec_to_hex(min_buffer_size);
+  min_buf_packet_resp.end_by = min_buf_packet.start_by + min_buf_packet.data.length();
+
+  return min_buf_packet;
+  
+}
+
 // SYN
 // @return: string in syn packet format
 Packet Protocol::craft_syn_packet() {
