@@ -67,6 +67,16 @@ int Client::connect_to_server(const std::string & address, int port) {
   int result = 0;
   if (packet.type == "00") {
     // SYN packet, therefore this is the first communication being established
+
+    // Check checksum
+    if (packet.checksum != packet.compute_checksum()) {
+      protocol_.error(std::string("ERROR [Client <- SYN] - Checksum not matching:") +
+                      "...Expected: " + packet.checksum + "\n...Received: " + 
+                      packet.compute_checksum());
+      return -1;
+    }
+    
+
     // Extract sequence number x
     std::string seq_num_x_str(packet.data);
     int seq_num_x = protocol_.hex_to_dec(seq_num_x_str);
@@ -88,17 +98,25 @@ int Client::connect_to_server(const std::string & address, int port) {
   if (response.type == "02") {
     // ACK received, check session ids
 
+    // Check checksum
+    if (response.checksum != response.compute_checksum()) {
+      protocol_.error(std::string("ERROR [Client <- ACK] - Checksum not matching:") +
+                      "...Expected: " + response.checksum + "\n...Received: " + 
+                      response.compute_checksum());
+      return -1;
+    }
+
     if (packet.receiver_id != response.receiver_id) {
       std::cout << "1" << std::endl;
       // terminate, incorrect recipient_id
-      protocol_.error("Connection terminated - Incorrect receiver id, expected: " + 
+      protocol_.error("ERROR - [Client <- ACK] - Incorrect receiver id, expected: " + 
                      packet.receiver_id + " received: " + response.receiver_id);
       return -1;
     }
 
     if (packet.sender_id != response.sender_id) {
       std::cout << "2" << std::endl;
-      protocol_.error("Connection terminated - Incorrect sender id, expected: " + 
+      protocol_.error("ERROR - [Client <- ACK] - Incorrect sender id, expected: " + 
                      packet.sender_id + " received: " + response.sender_id);
       // terminate, incorrect session_id
       return -1;
@@ -107,7 +125,7 @@ int Client::connect_to_server(const std::string & address, int port) {
     if ((seq_num_y+1) != (protocol_.hex_to_dec(response.data.substr(0,4)))) {
       std::cout << "3: "<< seq_num_y << " " << response.data.substr(0,4) << std::endl;
       // terminate, incorrect increment for sequence number y
-      protocol_.error(std::string("Connection terminated ") + 
+      protocol_.error(std::string("ERROR - [Client <- ACK] ") + 
                      "- Incorrect sequence number increment, expected: " + 
                       std::to_string(protocol_.hex_to_dec(packet.data) + 1) + " received: " +
                       std::to_string(protocol_.hex_to_dec(response.data.substr(0,4))));

@@ -87,17 +87,27 @@ void Server::run() {
 
   if (syn_ack_packet.type == "01") {
     // SYN-ACK received
+
+    // Check checksums
+    if (syn_ack_packet.checksum != syn_ack_packet.compute_checksum()) {
+      protocol_.error(std::string("ERROR [Server <- SYN-ACK] - Checksum not matching:") +
+                      "...Expected: " + syn_ack_packet.checksum + "\n...Received: " +
+                      syn_ack_packet.compute_checksum());
+      return;
+    }
+
+
     // Check session IDs
     if (syn_ack_packet.receiver_id != protocol_.session_id_) {
       // terminate, incorrect receiver_id
-      protocol_.error("Connection terminated - Incorrect receiver id, expected: " + 
+      protocol_.error("ERROR [Server <- SYN-ACK] - Incorrect receiver id, expected: " + 
                       protocol_.session_id_ + " received: " + syn_ack_packet.receiver_id);
       return;
     }
 
     if (syn_ack_packet.sender_id != syn_packet.receiver_id) {
       // terminate, incorrect session_id
-      protocol_.error("Connection terminated - Incorrect sender id, expected: " + 
+      protocol_.error("ERROR [Server <- SYN_ACK] - Incorrect sender id, expected: " + 
                       syn_packet.receiver_id + " received: " + syn_ack_packet.sender_id);
       return;
     }
@@ -106,7 +116,7 @@ void Server::run() {
     if (protocol_.hex_to_dec(syn_packet.data) + 1 != 
         (protocol_.hex_to_dec(syn_ack_packet.data.substr(0,4)))) {
       // terminate, invalid sequence number increment
-      protocol_.error(std::string("Connection terminated -") + 
+      protocol_.error(std::string("ERROR [Server <- SYN_ACK] -") + 
                       " Incorrect sequence number increment, expected: " + 
                       std::to_string(protocol_.hex_to_dec(syn_ack_packet.data.substr(0,4)))+ 
                       " received: " +
