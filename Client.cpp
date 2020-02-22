@@ -26,11 +26,8 @@ void Client::initialize() {
 int Client::connect_to_server(const std::string & address, int port) {
  
   int sock = 0;
-  int valread;
 
   struct sockaddr_in serv_addr;
-  std::string hello_message = "Hello from client";
-  char buffer[1024] = {0};
   if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     std::cout << "[-] Error: Socket creation error" << std::endl;
     protocol_.error("Error - Socket creation failed.");
@@ -54,17 +51,52 @@ int Client::connect_to_server(const std::string & address, int port) {
     return -1;
   }
 
-  // Receive message
-  valread = read(sock, buffer, 1024);
-  std::string raw_packet(buffer);
-  std::cout << "[+] Packet received ["  << valread << "]: "<< raw_packet << std::endl;
+  int min_client_buf_size = 50;
+  int min_server_buf_size = 0;
+  char client_buf[min_client_buf_size] = {0};
+  
 
-  // Check message type
+  int result = 0;
+  std::string raw_packet;
+
+  result = read(sock, client_buf, min_client_buf_size);
+  raw_packet = client_buf;
+  std::cout << "[+] Received packet [" << result << "]: " << raw_packet << std::endl;
   Packet packet;
+
+  // Receive Buffer request 
+  packet.parse(raw_packet);
+  if (packet.type == "FF") {
+    // Buffer size request
+    Packet response;
+    response = protocol_.craft_min_buffer_response_packet(min_client_buf_size);
+    result = send(sock, response.encode().c_str(), strlen(response.encode().c_str()), 0);
+    std::cout << "[+] Sent packet [" << result << "]: " << response.encode() << std::endl;
+
+
+    // Find out server min buffer
+    Packet request;
+    request = protocol_.craft_min_buffer_request_packet();
+    result = send(sock, request.encode().c_str(), strlen(request.encode().c_str()), 0);
+    std::cout << "[+] Sent packet [" << result << "]: " << request.encode() << std::endl;
+
+    result = read(sock, client_buf, min_client_buf_size);
+    raw_packet = client_buf;
+    response.parse(raw_packet);
+    std::cout << "[+] Received packet [" << result << "]: " << raw_packet << std::endl;
+
+    min_server_buf_size = protocol_.hex_to_dec(response.data);
+  }
+
+
+  // Handshake
+  // Check message type
+
+  result = read(sock, client_buf, min_client_buf_size);
+  raw_packet = client_buf;
   packet.parse(raw_packet);
 
   int seq_num_y = 0;
-  int result = 0;
   if (packet.type == "00") {
     // SYN packet, therefore this is the first communication being established
 
@@ -88,9 +120,9 @@ int Client::connect_to_server(const std::string & address, int port) {
   } 
 
   // Wait for ACK
-  valread = read(sock, buffer, 1024);
-  std::string raw_response_packet = std::string(buffer); 
-  std::cout << "[+] Packet received [" << valread << "]: " << raw_response_packet << std::endl;
+  result = read(sock, client_buf, min_client_buf_size);
+  std::string raw_response_packet = client_buf; 
+  std::cout << "[+] Packet received [" << result << "]: " << raw_response_packet << std::endl;
 
   Packet response;
   response.parse(raw_response_packet);

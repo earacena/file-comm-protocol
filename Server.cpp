@@ -68,10 +68,10 @@ void Server::run() {
 
   // Get buffer size
   // Set Server min buffer size
-  int min_buf_size = 40;
+  int server_min_buf_size = 40;
   int client_min_buf_size = 0;
   int result = 0;
-  char buffer[min_buf_size] = {0};
+  char server_buf[server_min_buf_size] = {0};
 
   Packet min_buffer_request_packet = protocol_.craft_min_buffer_request_packet();
   std::string raw_packet = min_buffer_request_packet.encode();
@@ -81,16 +81,31 @@ void Server::run() {
   std::cout << "[+] Sent packet [" << result << "]: " << raw_packet << std::endl;
 
   // Read response
-  result = read(sock_, buffer, min_buf_size);
-  
+  result = read(sock_, server_buf, server_min_buf_size); 
   Packet min_buffer_response_packet;
-  raw_packet = buffer;
+  raw_packet = server_buf;
   min_buffer_response_packet.parse(raw_packet);
   std::cout << "[+] Received packet [" << result << "]: " << raw_packet << std::endl;
  
   // Set new client min buffer size
   client_min_buf_size = protocol_.hex_to_dec(min_buffer_response_packet.data); 
 
+  // Wait for buffer request from client
+  result = read(sock_, server_buf, server_min_buf_size);
+  Packet request;
+  raw_packet = server_buf;
+  request.parse(raw_packet);
+  std::cout << "[+] Received packet [" << result << "]:" << raw_packet << std::endl; 
+  
+  if (request.type == "FF") {
+    // Buffer request received
+    Packet response = protocol_.craft_min_buffer_response_packet(server_min_buf_size);
+    raw_packet = response.encode();
+    result = send(sock_, raw_packet.c_str(), strlen(raw_packet.c_str()), 0);
+    std::cout << "[+] Sent packet [" << result << "]: " << raw_packet << std::endl;
+  }
+
+  // Handshake
   // Send SYN packet
   Packet syn_packet = protocol_.craft_syn_packet();
   int seq_num = protocol_.hex_to_dec(syn_packet.data);
@@ -100,8 +115,8 @@ void Server::run() {
   result = send(sock_, raw_syn_packet.c_str(), client_min_buf_size, 0);
   std::cout << "[+] Sent packet [" << result << "]: " << raw_syn_packet << std::endl; 
 
-  result = read(sock_, buffer, min_buf_size);
-  raw_packet = buffer;
+  result = read(sock_, server_buf, server_min_buf_size);
+  raw_packet = server_buf;
   Packet syn_ack_packet;
   syn_ack_packet.parse(raw_packet);
 
