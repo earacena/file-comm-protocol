@@ -19,7 +19,6 @@ void Server::initialize() {
   int valread = 0;
   int opt = 1;
   int addrlen = sizeof(address_);
-  char buffer[1024] = {0};
 
   // Create socket file descriptor
   if ((server_fd_ = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -51,7 +50,6 @@ void Server::initialize() {
 void Server::run() {
   std::cout << "[*] Server: running..." << std::endl;
   int addrlen = sizeof(address_);
-  char buffer[1024] = {0};
 
   // listen on the port
   if (listen(server_fd_, 3) < 0) {
@@ -68,18 +66,42 @@ void Server::run() {
     exit(EXIT_FAILURE);
   }
 
-  // Send SYN packet
+  // Get buffer size
+  // Set Server min buffer size
+  int min_buf_size = 40;
+  int client_min_buf_size = 0;
   int result = 0;
+  char buffer[min_buf_size] = {0};
+
+  Packet min_buffer_request_packet = protocol_.craft_min_buffer_request_packet();
+  std::string raw_packet = min_buffer_request_packet.encode();
+  
+  // Send min buffer request
+  result = send(sock_, raw_packet.c_str(), strlen(raw_packet.c_str()), 0);
+  std::cout << "[+] Sent packet [" << result << "]: " << raw_packet << std::endl;
+
+  // Read response
+  result = read(sock_, buffer, min_buf_size);
+  
+  Packet min_buffer_response_packet;
+  raw_packet = buffer;
+  min_buffer_response_packet.parse(raw_packet);
+  std::cout << "[+] Received packet [" << result << "]: " << raw_packet << std::endl;
+ 
+  // Set new client min buffer size
+  client_min_buf_size = protocol_.hex_to_dec(min_buffer_response_packet.data); 
+
+  // Send SYN packet
   Packet syn_packet = protocol_.craft_syn_packet();
   int seq_num = protocol_.hex_to_dec(syn_packet.data);
 
   std::string raw_syn_packet = syn_packet.encode();
 
-  result = send(sock_, raw_syn_packet.c_str(), strlen(raw_syn_packet.c_str()), 0);
+  result = send(sock_, raw_syn_packet.c_str(), client_min_buf_size, 0);
   std::cout << "[+] Sent packet [" << result << "]: " << raw_syn_packet << std::endl; 
 
-  result = read(sock_, buffer, 1024);
-  std::string raw_packet(buffer);
+  result = read(sock_, buffer, min_buf_size);
+  raw_packet = buffer;
   Packet syn_ack_packet;
   syn_ack_packet.parse(raw_packet);
 
@@ -131,7 +153,7 @@ void Server::run() {
     std::string raw_ack_packet = ack_packet.encode();
 
     // Send ACK packet
-    result = send(sock_, raw_ack_packet.c_str(), strlen(raw_ack_packet.c_str()), 0);
+    result = send(sock_, raw_ack_packet.c_str(), client_min_buf_size, 0);
     std::cout << "[+] Sent packet [" << result << "]: " << raw_ack_packet << std::endl;
     std::cout << "[+] Connection successfully established (Handshake complete)." << std::endl;
   }

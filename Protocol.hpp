@@ -52,6 +52,9 @@ public:
 	/////////
 
 	/////// Handshake helpers
+  Packet craft_min_buffer_request_packet();
+  Packet craft_min_buffer_response_packet(const int buffer_size);
+
   // SYN
   Packet craft_syn_packet();
   // SYN-ACK
