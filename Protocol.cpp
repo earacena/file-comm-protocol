@@ -46,6 +46,20 @@ Packet Protocol::craft_min_buffer_request_packet() {
   min_buf_packet.checksum = min_buf_packet.compute_checksum();
   min_buf_packet.data = "";
 
+  logger_.record_event(std::string("\nMIN BUF REQ packet crafted::") +
+                       "\n\t- Raw packet:\t\t" + min_buf_packet.encode() +
+                       "\n\t- Packet size:\t\t" + dec_to_hex(min_buf_packet.packet_size) +
+                       "\n\t- Start-by:\t\t" + dec_to_hex(min_buf_packet.start_by) +
+                       "\n\t- End-by:\t\t" + dec_to_hex(min_buf_packet.end_by) +
+                       "\n\t- Packet # (out of n):\t" + dec_to_hex(min_buf_packet.packet_num) +
+                       "\n\t- Total packets (n):\t" + dec_to_hex(min_buf_packet.total_packets) +
+                       "\n\t- Session id (Sender):\t" + min_buf_packet.sender_id +
+                       "\n\t- Receiver id:\t\t" + min_buf_packet.receiver_id +
+                       "\n\t- Packet type:\t\t" + min_buf_packet.type +
+                       "\n\t- Checksum:\t\t" + min_buf_packet.checksum +
+                       "\n\t- Data:" +
+                       "\n\t... Seq. num. (x):\t" + min_buf_packet.data);
+
   return min_buf_packet;
 }
 
@@ -63,6 +77,20 @@ Packet Protocol::craft_min_buffer_response_packet(const int min_buffer_size) {
   min_buf_packet_resp.checksum = min_buf_packet_resp.compute_checksum();
   min_buf_packet_resp.data = dec_to_hex(min_buffer_size);
   min_buf_packet_resp.end_by = min_buf_packet_resp.start_by + min_buf_packet_resp.data.length();
+
+  logger_.record_event(std::string("\nMIN-BUF-RESP packet crafted::") +
+                       "\n\t- Raw packet:\t\t" + min_buf_packet_resp.encode() +
+                       "\n\t- Packet size:\t\t" + dec_to_hex(min_buf_packet_resp.packet_size) +
+                       "\n\t- Start-by:\t\t" + dec_to_hex(min_buf_packet_resp.start_by) +
+                       "\n\t- End-by:\t\t" + dec_to_hex(min_buf_packet_resp.end_by) +
+                       "\n\t- Packet # (out of n):\t" + dec_to_hex(min_buf_packet_resp.packet_num) +
+                       "\n\t- Total packets (n):\t" + dec_to_hex(min_buf_packet_resp.total_packets) +
+                       "\n\t- Session id (Sender):\t" + min_buf_packet_resp.sender_id +
+                       "\n\t- Receiver id:\t\t" + min_buf_packet_resp.receiver_id +
+                       "\n\t- Packet type:\t\t" + min_buf_packet_resp.type +
+                       "\n\t- Checksum:\t\t" + min_buf_packet_resp.checksum +
+                       "\n\t- Data:" +
+                       "\n\t... Seq. num. (x):\t" + min_buf_packet_resp.data);
 
   return min_buf_packet_resp;
   
