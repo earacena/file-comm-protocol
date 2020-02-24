@@ -7,6 +7,7 @@
 #define PACKET_HPP
 
 #include <string>
+#include <algorithm>
 
 #include "Protocol.hpp"
 
@@ -14,18 +15,31 @@
 // Packet format/fields/sizes
 // Example:
 // * : * : * : 0001 : 0002 : 2A : B1 : 01 : * : data
-// Packet size (for now)       2 bytes:
-// Start-by (for data section) 1 byte :
-// End-by (for data section)   1 byte :
-// Packet number               2 bytes:
-// Total packets               2 bytes:
-// Sender id                   1 byte :
-// Receiver id                 1 byte :
-// Type                        1 byte :
-// Checksum                    2 bytes:
-// Data                        * byte(s)
+// Packet size (for now)       2 bytes : 4
+// Start-by (for data section) 1 byte  : 2
+// End-by (for data section)   1 byte  : 2
+// Packet number               2 bytes : 4
+// Total packets               2 bytes : 4
+// Sender id                   1 byte  : 2
+// Receiver id                 1 byte  : 2
+// Type                        1 byte  : 2
+// Checksum                    2 bytes : 4
+// Data                        * byte(s) :*
+// Packet size = 26 + (data length)
 
-// Packet size = 11 bytes + * bytes (data length)
+// Packet Mapping
+// 00 - SYN     |
+// 01 - SYN-ACK | Handshake
+// 02 - ACK     |
+// 03 - PKU - RESERVED FOR IDENTITY |
+// 04 - PKS - RESERVED FOR IDENTITY | Identity
+// 05 - EKU - RESERVED FOR IDENTITY |
+// 06 - EKS - RESERVED FOR IDENTITY |
+// 07 - BRQ - Buffer size request  |
+// 08 - BRS - Buffer size response | Parameter/Pre-Transmit
+// 09 - DAT - General Use/Data packet | ETC 
+
+
 class Packet {
 public:
 

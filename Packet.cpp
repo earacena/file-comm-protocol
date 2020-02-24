@@ -30,8 +30,8 @@ void Packet::parse(const std::string & raw_packet) {
   receiver_id = raw_packet.substr(18,2); 
   type = raw_packet.substr(20,2); 
   checksum = raw_packet.substr(22,4); 
-  data = raw_packet.substr(26, (end_by-start_by));
-  
+  data = raw_packet.substr(26);
+
 }
   
 // Return Packet data in raw (hex) data for submission
@@ -67,8 +67,13 @@ std::string Packet::encode() {
   while (checksum.length() < 4) 
     checksum = "0" + checksum;
 
-   return p_size + start + end + num + total +
-         sender_id + receiver_id + type + checksum + data;
+   std::string encoded = p_size + start + end + num + total + sender_id +
+                         receiver_id + type + checksum + data;
+
+  // Make encoding uniform
+  std::transform(encoded.begin(), encoded.end(), encoded.begin(), ::toupper);
+  
+  return encoded;
 }
 
 // Calculate checksum, done in last step, returns hex value
@@ -112,7 +117,9 @@ std::string Packet::compute_checksum() {
     new_checksum += carry_int;
     new_checksum_hex = protocol.dec_to_hex(new_checksum);
   }
-  
+ 
+  std::transform(new_checksum_hex.begin(), new_checksum_hex.end(), new_checksum_hex.begin(), ::toupper);
+ 
   return new_checksum_hex;
 } 
 

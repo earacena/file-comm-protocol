@@ -41,7 +41,7 @@ public:
 	// sequence numbers must be randomized to avoid collision with other connections
 	int sequence_number_;
 
-	/////// Hex conversion helpers
+	//------------------- Hex conversion helpers ----------------
   int hex_value(const char hex_digit);
   std::string str_to_hex(const std::string & unencoded);
   std::string hex_to_str(const std::string & encoded);
@@ -49,9 +49,9 @@ public:
   int random_number(int length);
   int hex_to_dec(const std::string & encoded);
   std::string dec_to_hex(int number);  
-	/////////
+	//-----------------------------------------------------------
 
-	/////// Handshake helpers
+	//------------------- Handshake helpers ---------------------
   Packet craft_min_buffer_request_packet();
   Packet craft_min_buffer_response_packet(const int buffer_size);
 
@@ -61,20 +61,21 @@ public:
   Packet craft_syn_ack_packet(int sequence_number_x, const Packet & syn_packet);
   // ACK
   Packet craft_ack_packet(int sequence_number_y, const Packet & syn_ack_packet);
-	////////
 
-	/////// Identify helpers
+	// ----------------------------------------------------------
+  
+
+	//-------------------- Identify helpers ---------------------
   void generate_keys();
   std::string encapsulate_public_key(const std::string & public_key, const std::string & packet);
   void send_public_key_packet();
-	////////
+	//-----------------------------------------------------------
 
-	// Pre-Transmit methods/members
-	// data vector with parameters for recipient
-	// data[0] - max buffer/message size, request: MBUF
-	// data[1] - max memory, request: MMEM
-	// ...
-	std::string craft_data_packet(const std::string & request);
+	//-------------------- General Use/Data ---------------------
+	Packet craft_data_packet(const std::string & message, const std::string & receiver_id);
+
+
+  //-----------------------------------------------------------
 };
 
 #endif // PROTOCOL_HPP

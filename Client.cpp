@@ -168,6 +168,14 @@ int Client::connect_to_server(const std::string & address, int port) {
               << std::endl;
   }
   
+  result = read(sock, client_buf, min_client_buf_size);
+  raw_packet = client_buf;
+  std::cout << "[+] Received packet [" << result << "]: " << raw_packet << std::endl;
+  packet.parse(raw_packet);
+  std::cout << "[+] Received data: " << packet.data << std::endl;
+  std::cout << "[+] Received message: " << protocol_.hex_to_str(packet.data) << std::endl;
+
+
 
 
   //  std::cout << "[*] Sending hello message..." << std::endl;

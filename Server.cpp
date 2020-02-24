@@ -173,6 +173,20 @@ void Server::run() {
     std::cout << "[+] Connection successfully established (Handshake complete)." << std::endl;
   }
 
+  // Use case: Simulated buffer overflow
+  std::string message = std::string("This is a very long message, longer than the size") +
+                                    "of the buffer that is supposed to receive it. This " + 
+                                    "is created to test the exachange of buffer sizes " + 
+                                    "between a server and client.";  
+
+  Packet buffer_test_packet = protocol_.craft_data_packet(message, syn_ack_packet.sender_id);
+  std::cout << "[*] Packing message in packet: \"" << message << "\"" << std::endl;
+  raw_packet = buffer_test_packet.encode();
+  result = send(sock_, raw_packet.c_str(), (size_t)client_min_buf_size, 0);  
+  std::cout << "[+] Sent packet [" << result << "]: " << raw_packet << std::endl;
+
+
+
 // read message
 //  valread = read(new_socket, buffer, 1024);
 //  std::string read_message(buffer);

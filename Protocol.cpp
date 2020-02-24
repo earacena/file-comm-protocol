@@ -250,10 +250,55 @@ Packet Protocol::craft_ack_packet(int sequence_number_y, const Packet & syn_ack_
   return ack_packet; 
 
 }
-////////
+// ------------------------------------------------------------
 
 
-////// Hex conversion helpers ///////
+// ---------------------- General Use/Data --------------------
+Packet Protocol::craft_data_packet(const std::string & message, 
+                                        const std::string & receiver_id) {
+  Packet data_packet;
+
+  data_packet.sender_id = session_id_;
+  data_packet.receiver_id = receiver_id;
+  
+
+  std::string encoded = str_to_hex(message);
+  data_packet.data = encoded;
+  data_packet.packet_size = 26 + encoded.length();
+  data_packet.start_by = 26;
+  data_packet.end_by = data_packet.start_by + data_packet.data.length();
+  if (data_packet.end_by > 255) {
+    // Largest possible message size is 229 until reaching pre-transmit phase
+    data_packet.end_by = 255;
+    data_packet.data = data_packet.data.substr(0,229);
+  }
+  data_packet.packet_num = 1;
+  data_packet.total_packets = 1;
+  data_packet.type = "09";
+  data_packet.checksum = data_packet.compute_checksum();
+
+  logger_.record_event(std::string("\nDAT packet crafted::") +
+                       "\n\t- Raw packet:\t\t" + data_packet.encode() +
+                       "\n\t- Packet size:\t\t" + dec_to_hex(data_packet.packet_size) +
+                       "\n\t- Start-by:\t\t" + dec_to_hex(data_packet.start_by) +
+                       "\n\t- End-by:\t\t" + dec_to_hex(data_packet.end_by) +
+                       "\n\t- Packet # (out of n):\t" + dec_to_hex(data_packet.packet_num) +
+                       "\n\t- Total packets (n):\t" + dec_to_hex(data_packet.total_packets) +
+                       "\n\t- Session id (Sender):\t" + data_packet.sender_id +
+                       "\n\t- Receiver id:\t\t" + data_packet.receiver_id +
+                       "\n\t- Packet type:\t\t" + data_packet.type +
+                       "\n\t- Checksum:\t\t" + data_packet.checksum +
+                       "\n\t- Data:" +
+                       "\n\t... Message:\t\t" + data_packet.data);
+
+  return data_packet;
+}
+// ------------------------------------------------------------
+
+
+
+
+// --------------------- Hex conversion helpers ----------------------
 std::string Protocol::str_to_hex(const std::string & unencoded) {
   static const std::string hex_digits("0123456789ABCDEF");
 
@@ -281,11 +326,11 @@ std::string Protocol::hex_to_str(const std::string & encoded) {
 
   std::string unencoded;
   unencoded.reserve(len/2);
-  for(auto it = unencoded.begin(); it != unencoded.end(); ) {
-    int high_bits = hex_value(*it++);
-    int low_bits = hex_value(*it++);
-    // Combine into pair
-    unencoded.push_back(high_bits << 4 | low_bits);
+  std::string byte = "";
+  for(int i = 0; i < len; i += 2) {
+    byte = encoded.substr(i,2);
+    char ch = (char) (int)strtol(byte.c_str(), NULL, 16);
+    unencoded.push_back(ch);
   }
 
   return unencoded;
@@ -338,10 +383,9 @@ std::string Protocol::dec_to_hex(int number) {
   return stream.str();
 }
 
-////////////////////
+// -------------------------------------------------------------
 
-
-//////// Logging specific
+// ---------------------- Logging specific ---------------------
 void Protocol::error(const std::string & error_msg) {
   logger_.record_event(error_msg);
 }
