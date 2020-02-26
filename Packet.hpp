@@ -44,9 +44,12 @@ class Packet {
 public:
 
   Packet();
+
+  // Craft
+  virtual void craft(const std::string & payload) = 0;
   
   // Read raw packet data into Packet format
-  void parse(const std::string & raw_packet);
+  virtual void parse(const std::string & raw_packet);
     
   // Return Packet data in raw (hex) data for submission
   std::string encode();
@@ -67,4 +70,33 @@ public:
 
 };
 
+class SynPacket : public Packet {
+  virtual void craft(const Protocol & proto, const std::string & payload) override;
+
+};
+
+class SynAckPacket : public Packet {
+  virtual void craft(const Protocol & proto, const std::string & payload) override;
+
+};
+
+class AckPacket : public Packet {
+  virtual void craft(const Protocol & proto, const std::string & payload) override;
+
+};
+
+class BufferRequestPacket : public Packet {
+  virtual void craft(const Protocol & proto, const std::string & payload) override;
+
+};
+
+class BufferResponsePacket : public Packet {
+  virtual void craft(const Protocol & proto, const std::string & payload) override;
+
+};
+
+class DataPacket : public Packet {
+  virtual void craft(const Protocol & proto, const std::string & payload) override;
+
+}
 #endif // PACKET_HPP

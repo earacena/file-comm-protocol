@@ -33,7 +33,82 @@ void Packet::parse(const std::string & raw_packet) {
   data = raw_packet.substr(26);
 
 }
+
+
+// Virtual function implementations
+
+void SynPacket::craft(Protocol & proto, const std::string & payload) {
+
+  proto.session_id = proto.random_hex_str(2);
+  sender_id = proto.session_id_;
+
+  std::string receiver_session_id(proto.random_hex_str(2));
+  receiver_id = receiver_session_id;
+  type = "00";
+
+  proto.sequence_number = proto.random_number(4);
+  std::string hex_seq_num(proto.dec_to_hex(sequence_number));
+  if (hex_seq_num.length() < 4)
+    hex_seq_num = "0" + hex_seq_num;
+
+  data = hex_seq_num;
+  start_by = 26;
+  end_by = start_by + data.length();
+  packet_size = 26 + data.length();
+  packet_num = 1;
+  total_packets = 1;
+  checksum = compute_checksum();
+
+  logger_.record_event(std::string("\nSYN packet crafted::") +
+                       "\n\t- Raw packet:\t\t" + encode() +
+                       "\n\t- Packet size:\t\t" + proto.dec_to_hex(packet_size) +
+                       "\n\t- Start-by:\t\t" + proto.dec_to_hex(start_by) +
+                       "\n\t- End-by:\t\t" + proto.dec_to_hex(end_by) +
+                       "\n\t- Packet # (out of n):\t" + proto.dec_to_hex(packet_num) +
+                       "\n\t- Total packets (n):\t" + proto.dec_to_hex(total_packets) +
+                       "\n\t- Session id (Sender):\t" + sender_id +
+                       "\n\t- Receiver id:\t\t" + receiver_id +
+                       "\n\t- Packet type:\t\t" + type +
+                       "\n\t- Checksum:\t\t" + checksum +
+                       "\n\t- Data:" +
+                       "\n\t... Seq. num. (x):\t" + data);
   
+
+}
+
+
+void SynAckPacket::craft(Protocol & proto, const std::string & payload) {
+
+
+
+}
+
+
+void AckPacket::craft(Protocol & proto, const std::string & payload) {
+
+
+
+}
+
+void BufferRequestPacket::craft(Protocol & proto, const std::string & payload) {
+
+
+}
+
+
+void BufferResponsePacket::craft(Protocol & proto, const std::string & payload) {
+
+
+
+}
+ 
+void DataPacket::craft(Protocol & proto, const std::string & payload) {
+
+
+
+}
+ 
+ 
 // Return Packet data in raw (hex) data for submission
 std::string Packet::encode() {
   Protocol p;
