@@ -13,12 +13,16 @@
 #include <vector>
 #include <fstream>
 
+#include "Packet.hpp"
+
+class Packet;
+
 class Logger {
 public:
   Logger();
   Logger(const std::string & filename);
   void set_filename(const std::string & filename);
-  void record_event(const std::string & message);
+  void record_event(Packet & packet, const std::string & action);
   void save_log(); 
 
   

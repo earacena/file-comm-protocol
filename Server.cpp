@@ -73,8 +73,10 @@ void Server::run() {
   int result = 0;
   char server_buf[server_min_buf_size] = {0};
 
-  Packet min_buffer_request_packet = protocol_.craft_min_buffer_request_packet();
-  std::string raw_packet = min_buffer_request_packet.encode();
+  BufferRequestPacket buffer_request_server;
+  std::string payload = "";
+  buffer_request_server.craft(protocol_, payload);
+  std::string raw_packet = buffer_request_server.encode();
   
   // Send min buffer request
   result = send(sock_, raw_packet.c_str(), strlen(raw_packet.c_str()), 0);
@@ -82,24 +84,24 @@ void Server::run() {
 
   // Read response
   result = read(sock_, server_buf, server_min_buf_size); 
-  Packet min_buffer_response_packet;
+  BufferResponsePacket buffer_response_server;
   raw_packet = server_buf;
-  min_buffer_response_packet.parse(raw_packet);
+  buffer_response_server.parse(raw_packet);
   std::cout << "[+] Received packet [" << result << "]: " << raw_packet << std::endl;
  
   // Set new client min buffer size
-  client_min_buf_size = protocol_.hex_to_dec(min_buffer_response_packet.data); 
+  client_min_buf_size = hex_to_dec(buffer_response_server.data); 
 
   // Wait for buffer request from client
   result = read(sock_, server_buf, server_min_buf_size);
-  Packet request;
+  BufferRequestPacket buffer_request_client;
   raw_packet = server_buf;
   request.parse(raw_packet);
   std::cout << "[+] Received packet [" << result << "]:" << raw_packet << std::endl; 
   
   if (request.type == "FF") {
     // Buffer request received
-    Packet response = protocol_.craft_min_buffer_response_packet(server_min_buf_size);
+    BufferResponsePacket buffresponse = protocol_.craft_min_buffer_response_packet(server_min_buf_size);
     raw_packet = response.encode();
     result = send(sock_, raw_packet.c_str(), strlen(raw_packet.c_str()), 0);
     std::cout << "[+] Sent packet [" << result << "]: " << raw_packet << std::endl;

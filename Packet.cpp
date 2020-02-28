@@ -20,12 +20,11 @@ Packet::Packet() {
 
 // Read raw packet data into Packet format
 void Packet::parse(const std::string & raw_packet) { 
-  Protocol p;
-  packet_size = p.hex_to_dec(raw_packet.substr(0,4)); 
-  start_by =  p.hex_to_dec(raw_packet.substr(4,2)); 
-  end_by = p.hex_to_dec(raw_packet.substr(6,2)); 
-  packet_num = p.hex_to_dec(raw_packet.substr(8,4)); 
-  total_packets = p.hex_to_dec(raw_packet.substr(12,4)); 
+  packet_size = hex_to_dec(raw_packet.substr(0,4)); 
+  start_by =  hex_to_dec(raw_packet.substr(4,2)); 
+  end_by = hex_to_dec(raw_packet.substr(6,2)); 
+  packet_num = hex_to_dec(raw_packet.substr(8,4)); 
+  total_packets = hex_to_dec(raw_packet.substr(12,4)); 
   sender_id = raw_packet.substr(16,2); 
   receiver_id = raw_packet.substr(18,2); 
   type = raw_packet.substr(20,2); 
@@ -38,16 +37,15 @@ void Packet::parse(const std::string & raw_packet) {
 // Virtual function implementations
 
 void SynPacket::craft(Protocol & proto, const std::string & payload) {
+  proto.session_id = random_hex_str(2);
+  sender_id = proto.session_id;
 
-  proto.session_id = proto.random_hex_str(2);
-  sender_id = proto.session_id_;
-
-  std::string receiver_session_id(proto.random_hex_str(2));
+  std::string receiver_session_id(random_hex_str(2));
   receiver_id = receiver_session_id;
   type = "00";
 
-  proto.sequence_number = proto.random_number(4);
-  std::string hex_seq_num(proto.dec_to_hex(sequence_number));
+  proto.sequence_number = random_number(4);
+  std::string hex_seq_num(dec_to_hex(proto.sequence_number));
   if (hex_seq_num.length() < 4)
     hex_seq_num = "0" + hex_seq_num;
 
@@ -59,53 +57,134 @@ void SynPacket::craft(Protocol & proto, const std::string & payload) {
   total_packets = 1;
   checksum = compute_checksum();
 
-  logger_.record_event(std::string("\nSYN packet crafted::") +
-                       "\n\t- Raw packet:\t\t" + encode() +
-                       "\n\t- Packet size:\t\t" + proto.dec_to_hex(packet_size) +
-                       "\n\t- Start-by:\t\t" + proto.dec_to_hex(start_by) +
-                       "\n\t- End-by:\t\t" + proto.dec_to_hex(end_by) +
-                       "\n\t- Packet # (out of n):\t" + proto.dec_to_hex(packet_num) +
-                       "\n\t- Total packets (n):\t" + proto.dec_to_hex(total_packets) +
-                       "\n\t- Session id (Sender):\t" + sender_id +
-                       "\n\t- Receiver id:\t\t" + receiver_id +
-                       "\n\t- Packet type:\t\t" + type +
-                       "\n\t- Checksum:\t\t" + checksum +
-                       "\n\t- Data:" +
-                       "\n\t... Seq. num. (x):\t" + data);
-  
+  std::string action = "crafted";
+  proto.logger.record_event(*this, action); 
 
 }
 
 
 void SynAckPacket::craft(Protocol & proto, const std::string & payload) {
+  // Extract useful info from payload
+  // receiver id, payload(0,3)
+  proto.session_id = payload.substr(0,2);
+  // sender id, payload(4,7)
+  sender_id = payload.substr(3,2);
+  receiver_id = proto.session_id;
+
+  // Packet type
+  type = "01";
+
+  // Increment sequence number x
+  int sequence_number_x = hex_to_dec(payload.substr(5,4));
+
+  sequence_number_x += 1;
+  std::string hex_seq_num_x(dec_to_hex(sequence_number_x));
+  if (hex_seq_num_x.length() < 4)
+    hex_seq_num_x = "0" + hex_seq_num_x;
+  data.append(hex_seq_num_x);
+
+  // Generate sequence number y
+  proto.sequence_number = random_number(4);
+  std::string hex_seq_num_y(dec_to_hex(proto.sequence_number));
+  if (hex_seq_num_y.length() < 4)
+    hex_seq_num_y = "0" + hex_seq_num_y;
+  data.append(hex_seq_num_y);
+
+  packet_size = 26 + data.length();
+  start_by = 26;
+  end_by = data.length() + start_by;
+  packet_num = 1;
+  total_packets = 1;
+  checksum = compute_checksum();
 
 
-
+  proto.logger.record_event(*this, "crafted");
 }
 
 
 void AckPacket::craft(Protocol & proto, const std::string & payload) {
 
+  sender_id = proto.session_id;
+  receiver_id = payload.substr(0,2);
 
+  // Packet type
+  type = "02";
+
+  // Generate sequence number y
+  int sequence_number_y = hex_to_dec(payload.substr(2,4));
+  std::string hex_seq_num_y(dec_to_hex(sequence_number_y + 1));
+  if (hex_seq_num_y.length() < 4)
+    hex_seq_num_y = "0" + hex_seq_num_y;
+  data.append(hex_seq_num_y);
+
+  packet_size = 26 + data.length();
+  start_by = 26;
+  end_by = start_by + data.length();
+  packet_num = 1;
+  total_packets = 1;
+  checksum = compute_checksum();
+
+  proto.logger.record_event(*this, "crafted");
 
 }
 
 void BufferRequestPacket::craft(Protocol & proto, const std::string & payload) {
+  packet_size = 26;
+  start_by = 26;
+  end_by = 26;
+  packet_num = 1;
+  total_packets = 1;
+  sender_id = "00";
+  receiver_id = "00";
+  type = "07";
+  checksum = compute_checksum();
+  data = "";
+
+  proto.logger.record_event(*this, "crafted");
 
 
 }
 
 
 void BufferResponsePacket::craft(Protocol & proto, const std::string & payload) {
+  data = payload;
+  packet_size = 26 + payload.length();
+  start_by = 26;
+  end_by = start_by + data.length();
+  packet_num = 1;
+  total_packets = 1;
+  sender_id = "00";
+  receiver_id = "00";
+  type = "08";
+  checksum = compute_checksum();
 
-
+  proto.logger.record_event(*this, "crafted");
 
 }
  
 void DataPacket::craft(Protocol & proto, const std::string & payload) {
 
+  sender_id = proto.session_id;
+  
+  receiver_id = payload.substr(0,2);
 
 
+  std::string encoded = str_to_hex(payload.substr(2));
+  data = encoded;
+  packet_size = 26 + encoded.length();
+  start_by = 26;
+  end_by = start_by + data.length();
+  if (end_by > 255) {
+    // Largest possible message size is 229 until reaching pre-transmit phase
+    end_by = 255;
+    data = data.substr(0,229);
+  }
+  packet_num = 1;
+  total_packets = 1;
+  type = "09";
+  checksum = compute_checksum();
+
+  proto.logger.record_event(*this, "crafted");
 }
  
  

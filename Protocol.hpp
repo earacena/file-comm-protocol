@@ -13,6 +13,8 @@
 #include <iomanip>
 #include <sstream>
 
+
+#include "Common.hpp"
 #include "Packet.hpp"
 #include "Logger.hpp"
 
@@ -27,29 +29,18 @@ public:
   // Logging specific
   void error(const std::string & error_msg);
  
-//private:
-
   // Allow logger to record protocol events
   friend class Logger;
   bool logging_;
-  Logger logger_;
+  Logger logger;
 
   // Used to differentiate multiple servers/clients on one physical computer
   // Not used for identity stage/layer
-  std::string session_id_;
+  std::string session_id;
 
 	// sequence numbers must be randomized to avoid collision with other connections
-	int sequence_number_;
+	int sequence_number;
 
-	//------------------- Hex conversion helpers ----------------
-  int hex_value(const char hex_digit);
-  std::string str_to_hex(const std::string & unencoded);
-  std::string hex_to_str(const std::string & encoded);
-  std::string random_hex_str(int length);
-  int random_number(int length);
-  int hex_to_dec(const std::string & encoded);
-  std::string dec_to_hex(int number);  
-	//-----------------------------------------------------------
 
 	//------------------- Handshake helpers ---------------------
   Packet craft_min_buffer_request_packet();

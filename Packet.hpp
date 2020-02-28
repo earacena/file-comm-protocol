@@ -9,6 +9,7 @@
 #include <string>
 #include <algorithm>
 
+#include "Common.hpp"
 #include "Protocol.hpp"
 
 
@@ -46,7 +47,7 @@ public:
   Packet();
 
   // Craft
-  virtual void craft(const std::string & payload) = 0;
+  virtual void craft(Protocol & proto, const std::string & payload) = 0;
   
   // Read raw packet data into Packet format
   virtual void parse(const std::string & raw_packet);
@@ -71,32 +72,32 @@ public:
 };
 
 class SynPacket : public Packet {
-  virtual void craft(const Protocol & proto, const std::string & payload) override;
+  virtual void craft(Protocol & proto, const std::string & payload) override;
 
 };
 
 class SynAckPacket : public Packet {
-  virtual void craft(const Protocol & proto, const std::string & payload) override;
+  virtual void craft(Protocol & proto, const std::string & payload) override;
 
 };
 
 class AckPacket : public Packet {
-  virtual void craft(const Protocol & proto, const std::string & payload) override;
+  virtual void craft(Protocol & proto, const std::string & payload) override;
 
 };
 
 class BufferRequestPacket : public Packet {
-  virtual void craft(const Protocol & proto, const std::string & payload) override;
+  virtual void craft(Protocol & proto, const std::string & payload) override;
 
 };
 
 class BufferResponsePacket : public Packet {
-  virtual void craft(const Protocol & proto, const std::string & payload) override;
+  virtual void craft(Protocol & proto, const std::string & payload) override;
 
 };
 
 class DataPacket : public Packet {
-  virtual void craft(const Protocol & proto, const std::string & payload) override;
+  virtual void craft(Protocol & proto, const std::string & payload) override;
 
 }
 #endif // PACKET_HPP

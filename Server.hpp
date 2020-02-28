@@ -16,6 +16,8 @@
  
 
 #include "Protocol.hpp"
+#include "Packet.hpp"
+
 
 class Server {
 public:
