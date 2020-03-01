@@ -66,16 +66,15 @@ void SynPacket::craft(Protocol & proto, const std::string & payload) {
 void SynAckPacket::craft(Protocol & proto, const std::string & payload) {
   // Extract useful info from payload
   // receiver id, payload(0,3)
-  proto.session_id = payload.substr(0,2);
-  // sender id, payload(4,7)
-  sender_id = payload.substr(3,2);
-  receiver_id = proto.session_id;
+  // sender id, session id
+  sender_id = proto.session_id;
+  receiver_id = payload.substr(0,2);
 
   // Packet type
   type = "01";
 
   // Increment sequence number x
-  int sequence_number_x = hex_to_dec(payload.substr(5,4));
+  int sequence_number_x = hex_to_dec(payload.substr(2,4));
 
   sequence_number_x += 1;
   std::string hex_seq_num_x(dec_to_hex(sequence_number_x));
@@ -111,8 +110,7 @@ void AckPacket::craft(Protocol & proto, const std::string & payload) {
   type = "02";
 
   // Generate sequence number y
-  int sequence_number_y = hex_to_dec(payload.substr(2,4));
-  std::string hex_seq_num_y(dec_to_hex(sequence_number_y + 1));
+  std::string hex_seq_num_y(dec_to_hex(proto.sequence_number_y + 1));
   if (hex_seq_num_y.length() < 4)
     hex_seq_num_y = "0" + hex_seq_num_y;
   data.append(hex_seq_num_y);

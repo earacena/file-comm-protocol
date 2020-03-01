@@ -8,10 +8,13 @@
 
 #include <string>
 #include <algorithm>
+#include <unordered_map>
+#include <functional>
 
 #include "Common.hpp"
 #include "Protocol.hpp"
 
+class Protocol;
 
 // Packet format/fields/sizes
 // Example:
@@ -27,6 +30,10 @@
 // Checksum                    2 bytes : 4
 // Data                        * byte(s) :*
 // Packet size = 26 + (data length)
+
+// Character position
+// 1234 : 56 : 78 : 9ABC : DEF0 : 1  2 : 3  4 : 5  6 : 7  8  9  A : *
+// 0123   45   67   89AB   CDEF   10 11  12 13  14 15  16 17 18 19  1A
 
 // Packet Mapping
 // 00 - SYN     |
@@ -72,32 +79,40 @@ public:
 };
 
 class SynPacket : public Packet {
-  virtual void craft(Protocol & proto, const std::string & payload) override;
+public:
+   void craft(Protocol & proto, const std::string & payload) override;
 
 };
 
 class SynAckPacket : public Packet {
-  virtual void craft(Protocol & proto, const std::string & payload) override;
+public:
+   void craft(Protocol & proto, const std::string & payload) override;
 
 };
 
 class AckPacket : public Packet {
-  virtual void craft(Protocol & proto, const std::string & payload) override;
+public:
+   void craft(Protocol & proto, const std::string & payload) override;
 
 };
 
 class BufferRequestPacket : public Packet {
-  virtual void craft(Protocol & proto, const std::string & payload) override;
+public:
+   void craft(Protocol & proto, const std::string & payload) override;
 
 };
 
 class BufferResponsePacket : public Packet {
-  virtual void craft(Protocol & proto, const std::string & payload) override;
+public:
+   void craft(Protocol & proto, const std::string & payload) override;
 
 };
 
 class DataPacket : public Packet {
-  virtual void craft(Protocol & proto, const std::string & payload) override;
+public:
+   void craft(Protocol & proto, const std::string & payload) override;
 
-}
+};
+
+
 #endif // PACKET_HPP

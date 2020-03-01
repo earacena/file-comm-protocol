@@ -37,10 +37,11 @@ public:
   // Used to differentiate multiple servers/clients on one physical computer
   // Not used for identity stage/layer
   std::string session_id;
-
+  std::string receiver_id;
 	// sequence numbers must be randomized to avoid collision with other connections
 	int sequence_number;
-
+  int sequence_number_y;
+  
 
 	//------------------- Handshake helpers ---------------------
   Packet craft_min_buffer_request_packet();
