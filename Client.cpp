@@ -66,7 +66,7 @@ int Client::connect_to_server(const std::string & address, int port) {
 
   // Receive Buffer request 
   packet.parse(raw_packet);
-  if (packet.type == "FF") {
+  if (packet.type == "07") {
     // Buffer size request
     Packet response;
     response = protocol_.craft_min_buffer_response_packet(min_client_buf_size);

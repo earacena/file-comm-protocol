@@ -117,25 +117,25 @@ void Server::run() {
       std::string packet_type = raw_packet.substr(20,2);
 
       // Upcast to specific packet object
-      Packet * packet_ptr;
+      std::unique_ptr<Packet> packet_ptr;
       if (packet_type == "00") {
         // SYN packet
-        packet_ptr = new SynPacket();
+        packet_ptr = std::make_unique<SynPacket>();
       } else if (packet_type == "01") {
         // SYN-ACK packet
-        packet_ptr = new SynAckPacket();
+        packet_ptr = std::make_unique<SynAckPacket>();
       } else if (packet_type == "02") {
         // ACK packet
-        packet_ptr = new AckPacket();
+        packet_ptr = std::make_unique<AckPacket>();
       } else if (packet_type == "07") {
         // Buffer Request packet
-        packet_ptr = new BufferRequestPacket();
+        packet_ptr = std::make_unique<BufferRequestPacket>();
       } else if (packet_type == "08") {
         // Buffer Response packet
-        packet_ptr = new BufferResponsePacket();
+        packet_ptr = std::make_unique<BufferResponsePacket>();
       } else if (packet_type == "09") {
         // General Data packet
-        packet_ptr = new DataPacket();
+        packet_ptr = std::make_unique<DataPacket>();
       } else {
         std::cout << "[-] Error ~> Server : Invalid packet type [" << packet_type << "]" << std::endl;
         break;
@@ -232,7 +232,7 @@ void Server::run() {
     }
 
   }
-  
+ 
 }
 //  BufferRequestPacket buffer_request_server;
 //  std::string payload = "";
