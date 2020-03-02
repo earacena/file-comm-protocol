@@ -18,15 +18,14 @@ void Logger::record_event(Packet & packet, const std::string & action) {
 
   std::string event("\n");
 
-  Protocol proto;
 
   event = event + "Packet " + action  + " [" + packet.type + "]::\n";
   event = event + "\t| Raw Packet: " + packet.encode() + "\n";
-  event = event + "\t| Packet size:\t\t" + proto.dec_to_hex(packet.packet_size) + "\n";
-  event = event + "\t| Start-by:\t\t" + proto.dec_to_hex(packet.start_by) + "\n";
-  event = event + "\t| End-by:\t\t" + proto.dec_to_hex(packet.end_by) + "\n";
-  event = event + "\t| Packet # (out of n):\t" + proto.dec_to_hex(packet.packet_num) + "\n";
-  event = event + "\t| Total packets (n):\t" + proto.dec_to_hex(packet.total_packets) + "\n";
+  event = event + "\t| Packet size:\t\t" + dec_to_hex(packet.packet_size) + "\n";
+  event = event + "\t| Start-by:\t\t" + dec_to_hex(packet.start_by) + "\n";
+  event = event + "\t| End-by:\t\t" + dec_to_hex(packet.end_by) + "\n";
+  event = event + "\t| Packet # (out of n):\t" + dec_to_hex(packet.packet_num) + "\n";
+  event = event + "\t| Total packets (n):\t" + dec_to_hex(packet.total_packets) + "\n";
   event = event + "\t| Session id (Sender):\t" + packet.sender_id + "\n";
   event = event + "\t| Receiver id:\t\t" + packet.receiver_id + "\n";
   event = event + "\t| Packet type:\t\t" + packet.type + "\n";

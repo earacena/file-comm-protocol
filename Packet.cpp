@@ -58,7 +58,7 @@ void SynPacket::craft(Protocol & proto, const std::string & payload) {
   checksum = compute_checksum();
 
   std::string action = "crafted";
-  proto.logger.record_event(*this, action); 
+  //proto.logger.record_event(*this, action); 
 
 }
 
@@ -97,7 +97,7 @@ void SynAckPacket::craft(Protocol & proto, const std::string & payload) {
   checksum = compute_checksum();
 
 
-  proto.logger.record_event(*this, "crafted");
+  //proto.logger.record_event(*this, "crafted");
 }
 
 
@@ -122,41 +122,40 @@ void AckPacket::craft(Protocol & proto, const std::string & payload) {
   total_packets = 1;
   checksum = compute_checksum();
 
-  proto.logger.record_event(*this, "crafted");
+  //proto.logger.record_event(*this, "crafted");
 
 }
 
 void BufferRequestPacket::craft(Protocol & proto, const std::string & payload) {
+  sender_id = proto.session_id;
+  receiver_id = payload.substr(0,2);
   packet_size = 26;
   start_by = 26;
   end_by = 26;
   packet_num = 1;
   total_packets = 1;
-  sender_id = "00";
-  receiver_id = "00";
   type = "07";
   checksum = compute_checksum();
   data = "";
 
-  proto.logger.record_event(*this, "crafted");
-
+  //proto.logger.record_event(*this, "crafted");
 
 }
 
 
 void BufferResponsePacket::craft(Protocol & proto, const std::string & payload) {
+  sender_id = proto.session_id;
+  receiver_id = payload.substr(0,2);
   data = payload;
-  packet_size = 26 + payload.length();
+  packet_size = 26 + payload.length() - 2;
   start_by = 26;
   end_by = start_by + data.length();
   packet_num = 1;
   total_packets = 1;
-  sender_id = "00";
-  receiver_id = "00";
   type = "08";
   checksum = compute_checksum();
 
-  proto.logger.record_event(*this, "crafted");
+  //proto.logger.record_event(*this, "crafted");
 
 }
  
@@ -165,7 +164,6 @@ void DataPacket::craft(Protocol & proto, const std::string & payload) {
   sender_id = proto.session_id;
   
   receiver_id = payload.substr(0,2);
-
 
   std::string encoded = str_to_hex(payload.substr(2));
   data = encoded;
@@ -182,31 +180,30 @@ void DataPacket::craft(Protocol & proto, const std::string & payload) {
   type = "09";
   checksum = compute_checksum();
 
-  proto.logger.record_event(*this, "crafted");
+  //proto.logger.record_event(*this, "crafted");
 }
  
  
 // Return Packet data in raw (hex) data for submission
 std::string Packet::encode() {
-  Protocol p;
 
-  std::string p_size(p.dec_to_hex(packet_size));
+  std::string p_size(dec_to_hex(packet_size));
   while (p_size.length() < 4)
     p_size = "0" + p_size;
 
-  std::string start(p.dec_to_hex(start_by));
+  std::string start(dec_to_hex(start_by));
   while (start.length() < 2)
     start = "0" + start;
 
-  std::string end(p.dec_to_hex(end_by));
+  std::string end(dec_to_hex(end_by));
   while (end.length() < 2)
     end = "0" + end;
 
-  std::string num(p.dec_to_hex(packet_num));
+  std::string num(dec_to_hex(packet_num));
   while (num.length() < 4)
     num = "0" + num;
 
-  std::string total(p.dec_to_hex(total_packets));
+  std::string total(dec_to_hex(total_packets));
   while (total.length() < 4)
     total = "0" + total;
 
@@ -245,12 +242,11 @@ std::string Packet::compute_checksum() {
   }
 
   int checksum = 0;
-  Protocol protocol;
   checksum = packet_size + start_by + end_by + packet_num + total_packets;
-  checksum += protocol.hex_to_dec(sender_id) + protocol.hex_to_dec(receiver_id) + 
-              protocol.hex_to_dec(type);
+  checksum += hex_to_dec(sender_id) + hex_to_dec(receiver_id) + 
+              hex_to_dec(type);
 
-  std::string checksum_hex = protocol.dec_to_hex(checksum);
+  std::string checksum_hex = dec_to_hex(checksum);
   while (checksum_hex.length() < 4) {
     checksum_hex = "0" + checksum_hex;
   }
@@ -263,11 +259,11 @@ std::string Packet::compute_checksum() {
     new_checksum_hex = checksum_hex.substr(checksum_hex.length()-4);
     carry = checksum_hex.substr(0, checksum_hex.length()-4);
   
-    int new_checksum = protocol.hex_to_dec(new_checksum_hex);
-    int carry_int = protocol.hex_to_dec(carry);
+    int new_checksum = hex_to_dec(new_checksum_hex);
+    int carry_int = hex_to_dec(carry);
   
     new_checksum += carry_int;
-    new_checksum_hex = protocol.dec_to_hex(new_checksum);
+    new_checksum_hex = dec_to_hex(new_checksum);
   }
  
   std::transform(new_checksum_hex.begin(), new_checksum_hex.end(), new_checksum_hex.begin(), ::toupper);

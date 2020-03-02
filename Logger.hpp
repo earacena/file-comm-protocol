@@ -14,6 +14,7 @@
 #include <fstream>
 
 #include "Packet.hpp"
+#include "Common.hpp"
 
 class Packet;
 

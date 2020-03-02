@@ -14,6 +14,7 @@
 #include "Common.hpp"
 #include "Protocol.hpp"
 
+class Logger;
 class Protocol;
 
 // Packet format/fields/sizes

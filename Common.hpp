@@ -6,9 +6,12 @@
 #ifndef COMMON_HPP
 #define COMMON_HPP
 
-
+#include <iostream>
+#include <random>
+#include <sstream>
+#include <ios>
 // --------------------- Hex conversion helpers ----------------------
-std::string str_to_hex(const std::string & unencoded) {
+inline std::string str_to_hex(const std::string & unencoded) {
   static const std::string hex_digits("0123456789ABCDEF");
 
   std::string encoded;
@@ -26,7 +29,7 @@ std::string str_to_hex(const std::string & unencoded) {
   return encoded;
 }
 
-std::string hex_to_str(const std::string & encoded) {
+inline std::string hex_to_str(const std::string & encoded) {
   size_t len = encoded.length();
 
   // If odd length and invalid input since it must be in hex pairs
@@ -45,7 +48,7 @@ std::string hex_to_str(const std::string & encoded) {
   return unencoded;
 }
 
-std::string random_hex_str(int length) {
+inline std::string random_hex_str(int length) {
   std::string result("");
   std::string hex_digits("0123456789ABCDEF");
 
@@ -61,14 +64,14 @@ std::string random_hex_str(int length) {
   return result;
 }
 
-int random_number(int length) {
+inline int random_number(int length) {
   std::random_device rd;
   std::mt19937 mt(rd());
   std::uniform_int_distribution<> dist(0, 10000);
   return dist(mt);
 }
 
-int hex_value(const char hex_digit) {
+inline int hex_value(const char hex_digit) {
   if (hex_digit >= '0' && hex_digit <= '9')
     return hex_digit - '0';
 
@@ -82,11 +85,11 @@ int hex_value(const char hex_digit) {
   return -1;
 }
 
-int hex_to_dec(const std::string & encoded) {
+inline int hex_to_dec(const std::string & encoded) {
   return std::stoi(encoded, nullptr, 16);
 }
 
-std::string dec_to_hex(int number) {
+inline std::string dec_to_hex(int number) {
   std::stringstream stream;
   stream << std::hex << number;
   return stream.str();
