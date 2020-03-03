@@ -57,6 +57,10 @@ int Client::connect_to_server(const std::string & address, int port) {
   protocol_.connection_initiated = true;
   protocol_.asked_for_buffer = false;
   protocol_.receiver_min_buf_size = 34;
+
+  protocol_.ufds[0].fd = sock;
+  protocol_.ufds[0].events = POLLIN;
+
   // Connection loop
   while (true) {
     protocol_.loop(sock);

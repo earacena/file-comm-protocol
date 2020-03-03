@@ -30,11 +30,12 @@ Protocol::~Protocol() {
 
 void Protocol::loop(const int socket) {
   std::cout << ".\n"; 
+  
 
   std::string raw_packet = "";
   int result = 0; 
   //-------------------------------------------------------------
-  // SEND FIRST, Server initiates connection
+  // SEND FIRST, Node initiates connection
   //-------------------------------------------------------------
   // Normally a SYN packet would be only SEND FIRST action on first loop
   // but since server is passively listening, client will be sending SYN
@@ -52,11 +53,34 @@ void Protocol::loop(const int socket) {
     connection_initiated = true;
   }
   //-------------------------------------------------------------
-  // RECEIVE FIRST,  Server receives requests/packets first 
+  // RECEIVE FIRST, Node receives requests/packets first 
   //-------------------------------------------------------------
 
+  // Polling
+  std::cout << "[*] Polling (1 second timeout)..." << std::endl;
+
+  // poll ufds, 1 fd, 1000 ms
+  int retval = poll(ufds, 1, 1000);
+  
+  if (retval < 0) {
+    std::cout << "[-] Error ~> Poll()" << std::endl;
+    perror("poll");
+    exit(EXIT_FAILURE);
+  } else if (retval == 0) {
+    std::cout << "[-] Timeout occured (1s)! Terminating due to unresponsive connection..."
+              << std::endl;
+    exit(EXIT_FAILURE);
+  } // else, continue
+
   // retrieve packet
-  result = recv(socket, buffer, min_buf_size, 0);
+
+  if (ufds[0].revents & POLLIN) {
+    result = recv(socket, buffer, min_buf_size, 0);
+  } else {
+    std::cout << "[-] Error ~> checking events, falling back to recv." << std::endl;
+    result = recv(socket, buffer, min_buf_size, 0);
+  }
+
   if (result < 0) {
     // Error received
     std::cout << "[-] Error ~> recv()" << std::endl;

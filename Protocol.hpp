@@ -14,6 +14,7 @@
 #include <cstring>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/poll.h>
 #include <unistd.h>
 #include <memory>
 
@@ -56,6 +57,9 @@ public:
   int min_buf_size = 34;
   int receiver_min_buf_size;
   // Each node must set this according, then create a buffer
+
+  // Polling struct
+  struct pollfd ufds[1];
 };
 
 #endif // PROTOCOL_HPP

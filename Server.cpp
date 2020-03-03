@@ -75,6 +75,9 @@ void Server::run() {
   protocol_.connection_initiated = false;
   protocol_.asked_for_buffer = false;
   protocol_.receiver_min_buf_size = 34; 
+  
+  protocol_.ufds[0].fd = sock_;
+  protocol_.ufds[0].events = POLLIN;
 
   while (true) {
     protocol_.loop(sock_); 
